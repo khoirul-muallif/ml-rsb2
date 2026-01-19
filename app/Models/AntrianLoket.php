@@ -27,7 +27,10 @@ class AntrianLoket extends Model
         'end_time' => 'datetime:H:i:s',
     ];
 
-    // Scopes untuk query
+    // ========================================
+    // SCOPES
+    // ========================================
+    
     public function scopeHariIni($query)
     {
         return $query->whereDate('postdate', today());
@@ -53,7 +56,10 @@ class AntrianLoket extends Model
         return $query->where('status', '2');
     }
 
-    // Helper methods
+    // ========================================
+    // STATIC METHODS
+    // ========================================
+
     public static function getNomorTerakhir($type, $tanggal = null)
     {
         $tanggal = $tanggal ?? today();
@@ -87,10 +93,91 @@ class AntrianLoket extends Model
         return $prefix[$type] ?? 'X';
     }
 
+    /**
+     * Get antrian terbaru yang sedang dipanggil (status = 1)
+     * Digunakan untuk display/monitor TV
+     */
+    public static function getTerbaruDipanggil($type = null)
+    {
+        $query = self::where('status', '1')
+            ->whereDate('postdate', today())
+            ->orderByDesc('end_time')
+            ->orderByDesc('kd');
+
+        if ($type) {
+            $query->where('type', $type);
+        }
+
+        return $query->first();
+    }
+
+    /**
+     * Get antrian berikutnya yang belum dipanggil
+     * Digunakan untuk operasi pemanggil
+     */
+    public static function getBerikutnya($type, $tanggal = null)
+    {
+        $tanggal = $tanggal ?? today();
+
+        return self::where('type', $type)
+            ->whereDate('postdate', $tanggal)
+            ->where('status', '0')
+            ->orderBy('noantrian')
+            ->first();
+    }
+
+    /**
+     * Get summary statistik antrian
+     */
+    public static function getSummary($tanggal = null)
+    {
+        $tanggal = $tanggal ?? today();
+
+        return [
+            'loket' => [
+                'total' => self::where('type', 'Loket')->whereDate('postdate', $tanggal)->count(),
+                'selesai' => self::where('type', 'Loket')->where('status', '2')->whereDate('postdate', $tanggal)->count(),
+                'diproses' => self::where('type', 'Loket')->where('status', '1')->whereDate('postdate', $tanggal)->count(),
+                'menunggu' => self::where('type', 'Loket')->where('status', '0')->whereDate('postdate', $tanggal)->count(),
+            ],
+            'cs' => [
+                'total' => self::where('type', 'CS')->whereDate('postdate', $tanggal)->count(),
+                'selesai' => self::where('type', 'CS')->where('status', '2')->whereDate('postdate', $tanggal)->count(),
+                'diproses' => self::where('type', 'CS')->where('status', '1')->whereDate('postdate', $tanggal)->count(),
+                'menunggu' => self::where('type', 'CS')->where('status', '0')->whereDate('postdate', $tanggal)->count(),
+            ],
+            'apotek' => [
+                'total' => self::where('type', 'Apotek')->whereDate('postdate', $tanggal)->count(),
+                'selesai' => self::where('type', 'Apotek')->where('status', '2')->whereDate('postdate', $tanggal)->count(),
+                'diproses' => self::where('type', 'Apotek')->where('status', '1')->whereDate('postdate', $tanggal)->count(),
+                'menunggu' => self::where('type', 'Apotek')->where('status', '0')->whereDate('postdate', $tanggal)->count(),
+            ]
+        ];
+    }
+
+    // ========================================
+    // ATTRIBUTES (Accessors)
+    // ========================================
+
     public function getNomorAntrianLengkapAttribute()
     {
         $prefix = self::getPrefixHuruf($this->type);
         return $prefix . $this->noantrian;
+    }
+
+    /**
+     * Status label untuk display
+     */
+    public function getStatusLabelAttribute()
+    {
+        $status = [
+            '0' => 'Menunggu',
+            '1' => 'Dipanggil',
+            '2' => 'Selesai',
+            '3' => 'Tidak Hadir'
+        ];
+
+        return $status[$this->status] ?? 'Unknown';
     }
 
     // Relasi ke pasien (optional, sesuaikan dengan struktur database kamu)

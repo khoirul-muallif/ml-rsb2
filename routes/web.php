@@ -2,7 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\PemanggilAntrianController;
-
+use App\Http\Controllers\DisplayAntrianController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -19,6 +19,8 @@ Route::prefix('anjungan')->name('anjungan.')->group(function () {
     // Halaman pemanggil antrian
     Route::get('/pemanggil', [PemanggilAntrianController::class, 'index'])
         ->name('pemanggil');
+    Route::get('/display', [DisplayAntrianController::class, 'index'])->name('anjungan.display');
+    
     
     // API Routes (untuk AJAX calls)
     Route::prefix('api')->name('api.')->group(function () {
@@ -35,6 +37,8 @@ Route::prefix('anjungan')->name('anjungan.')->group(function () {
         Route::post('/reset/{type}', [PemanggilAntrianController::class, 'resetAntrian'])
             ->name('reset')
             ->where('type', 'loket|cs|apotek|igd');
+        Route::get('/getdisplay', [DisplayAntrianController::class, 'getDisplay'])->name('getdisplay');
+        Route::post('/setdisplayselesai', [DisplayAntrianController::class, 'setDisplaySelesai'])->name('setdisplayselesai');
     });
 });
 
