@@ -41,6 +41,12 @@ class AntrianLoket extends Model
         return $query->where('type', $type);
     }
 
+
+    public function scopeByStatus($query, $status)
+    {
+        return $query->where('status', $status);
+    }
+
     public function scopeBelumDipanggil($query)
     {
         return $query->where('status', '0');

@@ -15,42 +15,21 @@ Route::get('/', function () {
  */
 
 Route::prefix('anjungan')->name('anjungan.')->group(function () {
+    Route::get('/', function () {
+    return view('anjungan.index');
+})->name('anjungan.index');
+    // Pemanggil normal
+    Route::get('/pemanggil', [PemanggilAntrianController::class, 'index'])->name('pemanggil');
+       // Display normal
+    Route::get('/display', [DisplayAntrianController::class, 'index'])->name('display');
     
-    // Halaman pemanggil antrian
-    Route::get('/pemanggil', [PemanggilAntrianController::class, 'index'])
-        ->name('pemanggil');
-    Route::get('/display', [DisplayAntrianController::class, 'index'])->name('anjungan.display');
-    
-    
-    // API Routes (untuk AJAX calls)
+    // API Routes
     Route::prefix('api')->name('api.')->group(function () {
-        
-        // Set panggil (dipanggil saat klik tombol panggil)
-        Route::post('/setpanggil', [PemanggilAntrianController::class, 'setPanggil'])
-            ->name('setpanggil');
-        
-        // Simpan nomor rekam medis
-        Route::post('/simpannorm', [PemanggilAntrianController::class, 'simpanNoRM'])
-            ->name('simpannorm');
-        
-        // Reset antrian (loket, cs, apotek)
-        Route::post('/reset/{type}', [PemanggilAntrianController::class, 'resetAntrian'])
-            ->name('reset')
-            ->where('type', 'loket|cs|apotek|igd');
+        Route::post('/setpanggil', [PemanggilAntrianController::class, 'setPanggil'])->name('setpanggil');
+        Route::post('/simpannorm', [PemanggilAntrianController::class, 'simpanNoRM'])->name('simpannorm');
+        Route::post('/reset/{type}', [PemanggilAntrianController::class, 'resetAntrian'])->name('reset');
         Route::get('/getdisplay', [DisplayAntrianController::class, 'getDisplay'])->name('getdisplay');
         Route::post('/setdisplayselesai', [DisplayAntrianController::class, 'setDisplaySelesai'])->name('setdisplayselesai');
+        
     });
 });
-
-/**
- * Contoh URL yang dihasilkan:
- * 
- * - GET  /anjungan/pemanggil
- * - GET  /anjungan/pemanggil?show=panggil_loket
- * - GET  /anjungan/pemanggil?show=panggil_loket&loket=1
- * - GET  /anjungan/pemanggil?show=panggil_loket&antrian=5&reset=1
- * 
- * - POST /anjungan/api/setpanggil
- * - POST /anjungan/api/simpannorm
- * - POST /anjungan/api/reset/loket
- */
