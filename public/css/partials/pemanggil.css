@@ -1,0 +1,100 @@
+body {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    padding: 20px 0;
+}
+
+.antrian-header {
+    text-align: center;
+    color: #fff;
+    margin-bottom: 40px;
+}
+
+.antrian-header h1 {
+    font-size: 48px;
+    font-weight: 700;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+}
+
+.panel {
+    background: #fff;
+    border-radius: 15px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    overflow: hidden;
+    transition: transform 0.3s ease;
+    margin-bottom: 30px;
+}
+
+.panel:hover { transform: translateY(-5px); }
+
+.panel-heading {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 20px;
+    font-size: 24px;
+    font-weight: 600;
+}
+
+.panel-body {
+    padding: 40px 20px;
+    text-align: center;
+}
+
+.panel-title {
+    font-size: 72px;
+    font-weight: 300;
+    margin: 0;
+    color: #667eea;
+}
+
+.queue-prefix {
+    font-weight: 700;
+    margin-right: 5px;
+}
+
+.panel-footer {
+    padding: 20px;
+    background: #f8f9fa;
+}
+
+.btn-group-justified {
+    display: flex;
+    gap: 10px;
+}
+
+.btn-group-justified .btn {
+    flex: 1;
+    padding: 12px;
+    font-size: 1.5rem;
+    font-weight: 600;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+}
+
+.btn-group-justified .btn:hover {
+    transform: scale(1.05);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+}
+
+.card-antrian {
+    background: white;
+    border-radius: 15px;
+    padding: 25px;
+    margin: 20px auto;
+    max-width: 500px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+
+.instruction-list {
+    background: rgba(255,255,255,0.95);
+    border-radius: 15px;
+    padding: 30px;
+    margin-top: 30px;
+}
+
+.instruction-list li {
+    font-size: 1.1rem;
+    margin-bottom: 15px;
+    color: #333;
+    font-weight: 500;
+}

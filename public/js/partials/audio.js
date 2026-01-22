@@ -1,0 +1,89 @@
+/**
+ * Convert number to Indonesian audio sequence
+ */
+function convertToIndonesianAudio(number, playlist, baseUrl) {
+    var num = parseInt(number);
+    
+    if(num == 0) {
+        playlist.push(baseUrl + '/nol.wav');
+        return;
+    }
+    
+    // Ratusan
+    if(num >= 200) {
+        var ratusan = Math.floor(num / 100);
+        playlist.push(baseUrl + '/' + ratusan + '.wav');
+        playlist.push(baseUrl + '/ratus.wav');
+        num = num % 100;
+    } else if(num >= 100) {
+        playlist.push(baseUrl + '/seratus.wav');
+        num = num % 100;
+    }
+    
+    // Puluhan
+    if(num >= 20) {
+        var puluhan = Math.floor(num / 10);
+        playlist.push(baseUrl + '/' + puluhan + '.wav');
+        playlist.push(baseUrl + '/puluh.wav');
+        num = num % 10;
+    } else if(num >= 11) {
+        if(num == 11) {
+            playlist.push(baseUrl + '/sebelas.wav');
+        } else {
+            var satuan = num - 10;
+            playlist.push(baseUrl + '/' + satuan + '.wav');
+            playlist.push(baseUrl + '/belas.wav');
+        }
+        return;
+    } else if(num == 10) {
+        playlist.push(baseUrl + '/sepuluh.wav');
+        return;
+    }
+    
+    // Satuan (1-9)
+    if(num > 0) {
+        playlist.push(baseUrl + '/' + num + '.wav');
+    }
+}
+
+/**
+ * Play audio sequence
+ */
+function playAudioSequence(playlist, index = 0) {
+    if (index >= playlist.length) {
+        console.log('✅ Audio playback complete');
+        return;
+    }
+    
+    var audio = new Audio(playlist[index]);
+    audio.volume = 1.0;
+    audio.preload = 'auto';
+    
+    audio.play().catch(function(error) {
+        console.error('❌ Error:', error);
+        setTimeout(() => playAudioSequence(playlist, index + 1), 100);
+    });
+    
+    audio.onended = () => setTimeout(() => playAudioSequence(playlist, index + 1), 150);
+    audio.onerror = () => setTimeout(() => playAudioSequence(playlist, index + 1), 100);
+}
+
+/**
+ * Play antrian sequence with prefix
+ */
+function playAntrianSequence(noantrian, loket, audioName = 'a') {
+    var playlist = [];
+    var baseUrl = '/plugins/anjungan/suara';
+    
+    playlist.push(baseUrl + '/antrian.wav');
+    playlist.push(baseUrl + '/' + audioName + '.wav');
+    convertToIndonesianAudio(noantrian, playlist, baseUrl);
+    
+    if(loket) {
+        playlist.push(baseUrl + '/counter.wav');
+        convertToIndonesianAudio(loket, playlist, baseUrl);
+    }
+    
+    console.log('🔊 Playlist:', playlist);
+    playAudioSequence(playlist);
+}

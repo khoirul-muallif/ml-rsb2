@@ -1,0 +1,360 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\AntrianLoket;
+use App\Models\MliteSetting;
+use App\Helpers\AntrianHelper;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+
+class PemanggilAntrianController extends Controller
+{
+    /**
+     * Router untuk semua loket
+     */
+    public function index(Request $request)
+    {
+        $show = $request->get('show');
+        
+        return match($show) {
+            'panggil_loket' => $this->handlePanggilLoket($request),
+            'panggil_loket_vip' => $this->handlePanggilLoketVIP($request),
+            'panggil_cs' => $this->handlePanggilCS($request),
+            'panggil_cs_vip' => $this->handlePanggilCSVIP($request),
+            'panggil_apotek' => $this->handlePanggilApotek($request),
+            default => redirect()->route('anjungan.index')
+        };
+    }
+
+    /**
+     * LOKET REGULER
+     */
+    private function handlePanggilLoket(Request $request)
+    {
+        return $this->renderPanggil($request, 'Loket');
+    }
+
+    /**
+     * LOKET VIP ← TAMBAHAN BARU
+     */
+    private function handlePanggilLoketVIP(Request $request)
+    {
+        return $this->renderPanggil($request, 'LoketVIP');
+    }
+
+    /**
+     * CS REGULER
+     */
+    private function handlePanggilCS(Request $request)
+    {
+        return $this->renderPanggil($request, 'CS');
+    }
+
+    /**
+     * CS VIP ← TAMBAHAN BARU
+     */
+    private function handlePanggilCSVIP(Request $request)
+    {
+        return $this->renderPanggil($request, 'CSVIP');
+    }
+
+    /**
+     * APOTEK
+     */
+    private function handlePanggilApotek(Request $request)
+    {
+        return $this->renderPanggil($request, 'Apotek');
+    }
+
+    /**
+     * Universal render logic
+     */
+    private function renderPanggil(Request $request, $type)
+    {
+        // Get config dari helper
+        $config = AntrianHelper::getByType($type);
+        
+        if (!$config) {
+            abort(404, 'Loket tidak ditemukan');
+        }
+        
+        // Handle form lompat antrian
+        if ($request->has('antrian') && $request->filled('antrian')) {
+            $this->lompatAntrian($type, $request->antrian, $request->get('loket', '1'));
+        }
+        
+        // Handle tombol forward (next)
+        if ($request->has('loket') && !$request->has('antrian')) {
+            $this->panggilAntrianBerikutnya($type, $request->loket);
+        }
+        
+        // Ambil setting loket dari database
+        $setting_key = $this->getSettingKey($type);
+        $setting_loket = MliteSetting::getSetting('anjungan', $setting_key, '1,2,3');
+        $loket = array_filter(array_map('trim', explode(',', $setting_loket)));
+        
+        // Ambil nomor antrian terkini
+        $tcounter = $this->getNomorAntrianTerkini($type);
+        
+        // Ambil total antrian hari ini
+        $noantrian = AntrianLoket::getNomorTerakhir($type);
+        
+        // Hitung antrian hari ini
+        $hitung_antrian = AntrianLoket::where('type', $type)
+            ->hariIni()
+            ->get();
+        
+        // Generate audio tags
+        $xcounter = $this->generateAudioTags($tcounter, $config['prefix'], $request->get('loket'));
+        
+        // Render dengan SINGLE BLADE UNIVERSAL
+        return view('anjungan.pemanggil.index', [
+            'config' => $config,  // Pass config ke blade
+            'loket' => $loket,
+            'antrian' => $tcounter,
+            'noantrian' => $noantrian,
+            'hitung_antrian' => $hitung_antrian,
+            'xcounter' => $xcounter,
+        ]);
+    }
+
+    /**
+     * Panggil antrian berikutnya (tetap pakai mlite_setting)
+     */
+    private function panggilAntrianBerikutnya($type, $loket)
+    {
+        $tcounter = $this->getNomorAntrianTerkini($type);
+        $next_counter = $tcounter + 1;
+        
+        // Update DB
+        AntrianLoket::where('type', $type)
+            ->where('noantrian', $next_counter)
+            ->whereDate('postdate', today())
+            ->update([
+                'end_time' => now()->format('H:i:s'),
+                'loket' => $loket,
+                'status' => '1'
+            ]);
+        
+        // Update setting
+        $field_prefix = $this->getFieldPrefix($type);
+        MliteSetting::setSetting('anjungan', "panggil_{$field_prefix}", $loket);
+        MliteSetting::setSetting('anjungan', "panggil_{$field_prefix}_nomor", $next_counter);
+    }
+
+    /**
+     * Lompat antrian
+     */
+    private function lompatAntrian($type, $antrian, $loket)
+    {
+        $field_prefix = $this->getFieldPrefix($type);
+        
+        if (!is_numeric($antrian) || $antrian < 1) {
+            return;
+        }
+        
+        MliteSetting::setSetting('anjungan', "panggil_{$field_prefix}", $loket);
+        MliteSetting::setSetting('anjungan', "panggil_{$field_prefix}_nomor", $antrian);
+    }
+
+    /**
+     * Get nomor antrian terkini
+     */
+    private function getNomorAntrianTerkini($type)
+    {
+        $field_prefix = $this->getFieldPrefix($type);
+        return (int) MliteSetting::getSetting('anjungan', "panggil_{$field_prefix}_nomor", 0);
+    }
+
+    /**
+     * Get field prefix untuk setting database
+     */
+    private function getFieldPrefix($type)
+    {
+        return match($type) {
+            'Loket' => 'loket',
+            'LoketVIP' => 'loket_vip',  // ← Baru
+            'CS' => 'cs',
+            'CSVIP' => 'cs_vip',        // ← Baru
+            'Apotek' => 'apotek',
+            default => strtolower($type)
+        };
+    }
+
+    /**
+     * Get setting key untuk antrian_loket config
+     */
+    private function getSettingKey($type)
+    {
+        return match($type) {
+            'Loket' => 'antrian_loket',
+            'LoketVIP' => 'antrian_loket_vip',  // ← Baru
+            'CS' => 'antrian_cs',
+            'CSVIP' => 'antrian_cs_vip',        // ← Baru
+            'Apotek' => 'antrian_apotek',
+            default => 'antrian_' . strtolower($type)
+        };
+    }
+
+    /**
+     * Generate audio tags untuk preload
+     */
+    private function generateAudioTags($nomor, $prefix, $loket = null)
+    {
+        $tags = [];
+        $base_url = asset('plugins/anjungan/suara');
+        
+        // Audio untuk setiap digit nomor antrian
+        $digits = str_split((string)$nomor);
+        foreach ($digits as $i => $digit) {
+            $tags[] = '<audio id="suarabel' . $i . '" src="' . $base_url . '/' . $digit . '.wav" preload="auto"></audio>';
+        }
+        
+        // Audio dasar
+        $tags[] = '<audio id="suara_antrian" src="' . $base_url . '/antrian.wav" preload="auto"></audio>';
+        $tags[] = '<audio id="suara_loket" src="' . $base_url . '/counter.wav" preload="auto"></audio>';
+        
+        // Audio huruf prefix
+        $tags[] = '<audio id="suara_' . strtolower($prefix) . '" src="' . $base_url . '/' . strtolower($prefix) . '.wav" preload="auto"></audio>';
+        
+        // Audio untuk digit loket jika ada
+        if ($loket) {
+            $loket_digits = str_split((string)$loket);
+            foreach ($loket_digits as $idx => $digit) {
+                $tags[] = '<audio id="suaraloket' . $idx . '" src="' . $base_url . '/' . $digit . '.wav" preload="auto"></audio>';
+            }
+        }
+        
+        return $tags;
+    }
+
+    /**
+     * API: Set panggil (dipanggil via AJAX dari JS)
+     * Endpoint: POST /anjungan/api/setpanggil
+     */
+    public function setPanggil(Request $request)
+    {
+        $validated = $request->validate([
+            'noantrian' => 'required|numeric',
+            'type' => 'required|string',
+            'loket' => 'nullable|string',
+        ]);
+        
+        $type = $this->convertStringToType($validated['type']);
+        $noantrian = $validated['noantrian'];
+        $loket = $validated['loket'] ?? '1';
+        
+        // Update status antrian jadi "dipanggil"
+        $result = AntrianLoket::where('type', $type)
+            ->where('noantrian', $noantrian)
+            ->whereDate('postdate', today())
+            ->update([
+                'status' => '1',
+                'loket' => $loket,
+                'end_time' => now()->format('H:i:s')
+            ]);
+        
+        // Update setting untuk loket & nomor
+        $field_prefix = $this->getFieldPrefix($type);
+        MliteSetting::setSetting('anjungan', "panggil_{$field_prefix}", $loket);
+        MliteSetting::setSetting('anjungan', "panggil_{$field_prefix}_nomor", $noantrian);
+        
+        return response()->json([
+            'status' => (bool)$result,
+            'message' => $result ? 'Panggil berhasil' : 'Data tidak ditemukan'
+        ]);
+    }
+
+    /**
+     * API: Simpan nomor rekam medis
+     * Endpoint: POST /anjungan/api/simpannorm
+     */
+    public function simpanNoRM(Request $request)
+    {
+        $validated = $request->validate([
+            'noantrian' => 'required|numeric',
+            'type' => 'required|string',
+            'no_rkm_medis' => 'required|size:6|numeric'
+        ]);
+        
+        $type = $this->convertStringToType($validated['type']);
+        
+        // Update nomor RM ke database
+        $result = AntrianLoket::where('noantrian', $validated['noantrian'])
+            ->where('type', $type)
+            ->whereDate('postdate', today())
+            ->update(['no_rkm_medis' => $validated['no_rkm_medis']]);
+        
+        if ($result) {
+            // Jika type Apotek, mark as completed
+            if ($type === 'Apotek') {
+                AntrianLoket::where('type', $type)
+                    ->where('no_rkm_medis', $validated['no_rkm_medis'])
+                    ->whereDate('postdate', today())
+                    ->update(['status' => '3']);
+            }
+            
+            return response()->json([
+                'status' => true,
+                'message' => 'Nomor RM berhasil disimpan'
+            ]);
+        }
+        
+        return response()->json([
+            'status' => false,
+            'message' => 'Gagal menyimpan nomor RM'
+        ], 400);
+    }
+
+    /**
+     * HELPER: Convert string type ke Type format DB
+     */
+    private function convertStringToType($typeString)
+    {
+        return match(strtolower($typeString)) {
+            'loket' => 'Loket',
+            'cs' => 'CS',
+            'apotek' => 'Apotek',
+            'igd' => 'IGD',
+            default => 'Loket'
+        };
+    }
+
+    /**
+     * Reset antrian untuk tipe tertentu
+     */
+    public function resetAntrian($type)
+    {
+        $type = $this->convertStringToType($type);
+        
+        // Hapus semua antrian hari ini
+        $deleted = AntrianLoket::where('type', $type)
+            ->whereDate('postdate', today())
+            ->delete();
+        
+        if ($deleted >= 0) {
+            // Buat nomor awal
+            AntrianLoket::create([
+                'type' => $type,
+                'noantrian' => '1',
+                'postdate' => today(),
+                'start_time' => now()->format('H:i:s')
+            ]);
+            
+            // Reset setting
+            $field_prefix = $this->getFieldPrefix($type);
+            MliteSetting::setSetting('anjungan', "panggil_{$field_prefix}_nomor", 0);
+            
+            return response()->json([
+                'status' => true,
+                'message' => "Berhasil reset antrian {$type}"
+            ]);
+        }
+        
+        return response()->json([
+            'status' => false,
+            'message' => "Gagal reset antrian {$type}"
+        ], 400);
+    }
+}

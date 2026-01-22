@@ -4,72 +4,138 @@ namespace App\Http\Controllers;
 
 use App\Models\AntrianLoket;
 use App\Models\MliteSetting;
+use App\Helpers\AntrianHelper;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 
 class DisplayAntrianController extends Controller
 {
     /**
-     * Tampilkan display antrian loket (untuk TV/Monitor)
-     * Endpoint: GET /anjungan/display
+     * Display antrian - router utama
      */
-    public function index()
+    public function index(Request $request)
     {
-        $title = 'D';
+        $show = $request->get('show', 'all');
+        
+        $typeMap = [
+            'loket' => 'Loket',
+            'loket_vip' => 'LoketVIP',
+            'cs' => 'CS',
+            'cs_vip' => 'CSVIP',
+            'apotek' => 'Apotek',
+            'all' => null
+        ];
+        
+        $type = $typeMap[$show] ?? null;
+        $config = $type ? AntrianHelper::getByType($type) : null;
+        
+        // Common data
         $logo = MliteSetting::getSetting('settings', 'logo', 'logo.png');
-        $video_id = MliteSetting::getSetting('anjungan', 'vidio', '');
-        $running_text = MliteSetting::getSetting('anjungan', 'text_loket', 'Selamat datang di sistem antrian kami');
+        $videoId = MliteSetting::getSetting('anjungan', 'vidio', '');
+        $runningText = MliteSetting::getSetting('anjungan', 'text_loket', 'Selamat datang di sistem antrian kami');
+        $namaInstansi = MliteSetting::getSetting('settings', 'nama_instansi', 'Rumah Sakit');
+        $tanggal = $this->getTanggalIndonesia();
         
-        // Info user (jika login)
-        // $username = auth()->check() 
-        //     ? auth()->user()->name 
-        //     : 'Tamu';
-        
-        // Tanggal hari ini
-        $tanggal = $this->getDayIndonesia(date('Y-m-d')) . ', ' . $this->getDateIndonesia(date('Y-m-d'));
-        
-        return view('anjungan.display.index', [
-            'title' => $title,
-            'logo' => $logo,
-            'video_id' => $video_id,
-            'running_text' => $running_text,
-            //'username' => $username,
-            'tanggal' => $tanggal,
-        ]);
+        if ($type) {
+            // SINGLE DISPLAY - tampilkan 1 loket
+            return view('anjungan.display.single', [
+                'config' => $config,
+                'logo' => $logo,
+                'video_id' => $videoId,
+                'running_text' => $runningText,
+                'nama_instansi' => $namaInstansi,
+                'tanggal' => $tanggal,
+                'show' => $show
+            ]);
+        } else {
+            // MULTI DISPLAY - tampilkan semua loket
+            return view('anjungan.display.multi', [
+                'logo' => $logo,
+                'video_id' => $videoId,
+                'running_text' => $runningText,
+                'nama_instansi' => $namaInstansi,
+                'tanggal' => $tanggal,
+                'all_configs' => [
+                    'Loket' => AntrianHelper::getByType('Loket'),
+                    'LoketVIP' => AntrianHelper::getByType('LoketVIP'),
+                    'CS' => AntrianHelper::getByType('CS'),
+                    'CSVIP' => AntrianHelper::getByType('CSVIP'),
+                    'Apotek' => AntrianHelper::getByType('Apotek'),
+                ]
+            ]);
+        }
     }
 
     /**
-     * API: Get antrian yang sedang dipanggil
-     * Endpoint: GET /anjungan/api/getdisplay
-     * Return: JSON dengan data antrian terbaru yang dipanggil
+     * ✅ FIXED: API Get antrian yang sedang dipanggil
      */
     public function getDisplay(Request $request)
     {
-        // Ambil antrian terbaru yang statusnya "dipanggil" (status = 1)
-        $antrian = AntrianLoket::getTerbaruDipanggil();
+        $type = $request->get('type');
+        
+        if (!$type) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Parameter type required'
+            ]);
+        }
+        
+        // Get field prefix untuk ambil setting
+        $fieldPrefix = $this->getFieldPrefix($type);
+        
+        // Ambil nomor antrian terkini dari settings
+        $nomorTerkini = (int) MliteSetting::getSetting('anjungan', "panggil_{$fieldPrefix}_nomor", 0);
+        $loketTerkini = MliteSetting::getSetting('anjungan', "panggil_{$fieldPrefix}", '1');
+        
+        if ($nomorTerkini <= 0) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Belum ada antrian yang dipanggil'
+            ]);
+        }
+        
+        // Cek cache untuk prevent duplicate display
+        $cacheKey = "display_shown_{$type}_{$nomorTerkini}";
+        
+        if (Cache::has($cacheKey)) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Antrian sudah ditampilkan'
+            ]);
+        }
+        
+        // Ambil data antrian dari database
+        $antrian = AntrianLoket::where('type', $type)
+            ->where('noantrian', $nomorTerkini)
+            ->whereDate('postdate', today())
+            ->first();
         
         if (!$antrian) {
             return response()->json([
                 'status' => false,
-                'message' => 'Tidak ada antrian yang dipanggil'
+                'message' => 'Data antrian tidak ditemukan'
             ]);
         }
         
-        // Ambil loket yang sedang aktif untuk type ini
-        $loket = MliteSetting::getSetting('anjungan', "panggil_{$this->getFieldPrefix($antrian->type)}", '1');
+        // Mark as shown in cache (expire after 10 seconds)
+        Cache::put($cacheKey, true, now()->addSeconds(10));
+        
+        // Get config untuk prefix dan audio
+        $config = AntrianHelper::getByType($type);
         
         return response()->json([
             'status' => true,
             'type' => $antrian->type,
+            'prefix' => $config['prefix'] ?? 'A',
             'noantrian' => $antrian->noantrian,
-            'loket' => $loket,
-            'panggil' => $this->generateAudioFilesIndonesian($antrian->noantrian, $antrian->type, $loket),
+            'loket' => $loketTerkini,
+            'panggil' => $this->generateAudioSequence($type, $nomorTerkini, $loketTerkini),
             'id' => $antrian->kd
         ]);
     }
 
     /**
-     * API: Mark antrian sebagai selesai
-     * Endpoint: POST /anjungan/api/setdisplayselesai
+     * ✅ IMPROVED: Mark antrian sebagai selesai dipanggil
      */
     public function setDisplaySelesai(Request $request)
     {
@@ -77,63 +143,79 @@ class DisplayAntrianController extends Controller
             'id' => 'required|numeric'
         ]);
         
-        $updated = AntrianLoket::where('kd', $request->id)
-            ->update([
-                'status' => '2', // Status: Selesai
-                'end_time' => now()->format('H:i:s')
-            ]);
-        
         return response()->json([
-            'status' => (bool)$updated,
-            'message' => $updated ? 'Status updated' : 'Gagal update status'
+            'status' => true,
+            'message' => 'Display acknowledged'
         ]);
     }
 
     /**
-     * Generate audio files sequence dengan Bahasa Indonesia
-     * Contoh: nomor 125 → ['antrian', 'a', 'seratus', 'dua', 'puluh', 'lima', 'counter', '1']
-     * 
-     * @param int $noantrian
-     * @param string $type (Loket, CS, Apotek)
-     * @param int $loket
-     * @return array
+     * ✅ NEW: API Get statistik antrian
      */
-    private function generateAudioFilesIndonesian($noantrian, $type, $loket)
+    public function getStats(Request $request)
+    {
+        $type = $request->get('type');
+        
+        if (!$type) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Parameter type required'
+            ]);
+        }
+        
+        $stats = [
+            'total' => AntrianLoket::where('type', $type)
+                ->whereDate('postdate', today())
+                ->count(),
+            
+            'menunggu' => AntrianLoket::where('type', $type)
+                ->where('status', '0')
+                ->whereDate('postdate', today())
+                ->count(),
+            
+            'diproses' => AntrianLoket::where('type', $type)
+                ->where('status', '1')
+                ->whereDate('postdate', today())
+                ->count(),
+            
+            'selesai' => AntrianLoket::where('type', $type)
+                ->where('status', '2')
+                ->whereDate('postdate', today())
+                ->count(),
+        ];
+        
+        return response()->json([
+            'status' => true,
+            'stats' => $stats
+        ]);
+    }
+
+    /**
+     * Generate audio sequence untuk announcement
+     */
+    private function generateAudioSequence($type, $noantrian, $loket)
     {
         $files = [];
         
-        // 1. Suara pembuka "antrian"
         $files[] = 'antrian';
         
-        // 2. Huruf prefix (A, B, F)
-        $prefix = match($type) {
-            'Loket' => 'a',
-            'CS' => 'b',
-            'Apotek' => 'f',
-            default => 'a'
-        };
+        $config = AntrianHelper::getByType($type);
+        $prefix = strtolower($config['audio_name'] ?? $config['prefix']);
         $files[] = $prefix;
         
-        // 3. Nomor antrian dalam bahasa Indonesia
-        $this->convertToIndonesianAudio($noantrian, $files);
+        $this->convertNumberToIndonesianAudio($noantrian, $files);
         
-        // 4. Suara "counter"
         $files[] = 'counter';
         
-        // 5. Nomor loket dalam bahasa Indonesia
-        $this->convertToIndonesianAudio($loket, $files);
+        $this->convertNumberToIndonesianAudio($loket, $files);
         
         return $files;
     }
 
     /**
-     * Convert nomor ke audio files bahasa Indonesia
-     * Contoh: 125 → ['seratus', 'dua', 'puluh', 'lima']
-     * 
-     * @param int $number
-     * @param array &$files (pass by reference)
+     * Convert number ke audio files bahasa Indonesia
      */
-    private function convertToIndonesianAudio($number, &$files)
+    private function convertNumberToIndonesianAudio($number, &$files)
     {
         $num = (int)$number;
         
@@ -142,10 +224,9 @@ class DisplayAntrianController extends Controller
             return;
         }
         
-        // Ratusan
         if ($num >= 200) {
             $ratusan = intdiv($num, 100);
-            $files[] = (string)$ratusan;
+            $files[] = $this->digitToWord($ratusan);
             $files[] = 'ratus';
             $num = $num % 100;
         } elseif ($num >= 100) {
@@ -153,10 +234,9 @@ class DisplayAntrianController extends Controller
             $num = $num % 100;
         }
         
-        // Puluhan
         if ($num >= 20) {
             $puluhan = intdiv($num, 10);
-            $files[] = (string)$puluhan;
+            $files[] = $this->digitToWord($puluhan);
             $files[] = 'puluh';
             $num = $num % 10;
         } elseif ($num >= 11) {
@@ -164,7 +244,7 @@ class DisplayAntrianController extends Controller
                 $files[] = 'sebelas';
             } else {
                 $satuan = $num - 10;
-                $files[] = (string)$satuan;
+                $files[] = $this->digitToWord($satuan);
                 $files[] = 'belas';
             }
             return;
@@ -173,103 +253,62 @@ class DisplayAntrianController extends Controller
             return;
         }
         
-        // Satuan (1-9)
         if ($num > 0) {
-            $files[] = (string)$num;
+            $files[] = $this->digitToWord($num);
         }
     }
 
     /**
-     * Generate audio files sequence (simple version - digit per digit)
-     * Fallback jika ingin digit per digit: ['antrian', 'a', '1', '2', '5', 'counter', '1']
-     * 
-     * Tidak digunakan, hanya untuk reference
+     * Convert digit ke kata Indonesia
      */
-    private function generateAudioFilesSimple($noantrian, $type, $loket)
+    private function digitToWord($digit)
     {
-        $files = [];
+        $words = [
+            0 => 'nol', 1 => 'satu', 2 => 'dua', 3 => 'tiga', 4 => 'empat',
+            5 => 'lima', 6 => 'enam', 7 => 'tujuh', 8 => 'delapan', 9 => 'sembilan'
+        ];
         
-        $files[] = 'antrian';
-        
-        $prefix = match($type) {
-            'Loket' => 'a',
-            'CS' => 'b',
-            'Apotek' => 'f',
-            default => 'a'
-        };
-        $files[] = $prefix;
-        
-        // Nomor antrian (digit per digit)
-        $digits = str_split((string)$noantrian);
-        foreach ($digits as $digit) {
-            $files[] = $digit;
-        }
-        
-        $files[] = 'counter';
-        
-        // Nomor loket (digit per digit)
-        $loket_digits = str_split((string)$loket);
-        foreach ($loket_digits as $digit) {
-            $files[] = $digit;
-        }
-        
-        return $files;
+        return $words[$digit] ?? 'nol';
     }
 
     /**
-     * Helper: Get field prefix berdasarkan type
+     * Get field prefix untuk settings
      */
     private function getFieldPrefix($type)
     {
-        return match(strtolower($type)) {
-            'loket' => 'loket',
-            'cs' => 'cs',
-            'apotek' => 'apotek',
-            default => 'loket'
+        return match($type) {
+            'Loket' => 'loket',
+            'LoketVIP' => 'loket_vip',
+            'CS' => 'cs',
+            'CSVIP' => 'cs_vip',
+            'Apotek' => 'apotek',
+            default => strtolower($type)
         };
     }
 
     /**
-     * Helper: Get hari dalam bahasa Indonesia
+     * Get tanggal dalam format Indonesia
      */
-    private function getDayIndonesia($date)
+    private function getTanggalIndonesia()
     {
         $days = [
-            'Sunday' => 'Minggu',
-            'Monday' => 'Senin',
-            'Tuesday' => 'Selasa',
-            'Wednesday' => 'Rabu',
-            'Thursday' => 'Kamis',
-            'Friday' => "Jum'at",
+            'Sunday' => 'Minggu', 'Monday' => 'Senin', 'Tuesday' => 'Selasa',
+            'Wednesday' => 'Rabu', 'Thursday' => 'Kamis', 'Friday' => "Jum'at",
             'Saturday' => 'Sabtu'
         ];
         
-        return $days[\Carbon\Carbon::parse($date)->format('l')];
-    }
-
-    /**
-     * Helper: Get tanggal dalam format Indonesia
-     */
-    private function getDateIndonesia($date)
-    {
         $months = [
-            'January' => 'Januari',
-            'February' => 'Februari',
-            'March' => 'Maret',
-            'April' => 'April',
-            'May' => 'Mei',
-            'June' => 'Juni',
-            'July' => 'Juli',
-            'August' => 'Agustus',
-            'September' => 'September',
-            'October' => 'Oktober',
-            'November' => 'November',
-            'December' => 'Desember'
+            1 => 'Januari', 2 => 'Februari', 3 => 'Maret', 4 => 'April',
+            5 => 'Mei', 6 => 'Juni', 7 => 'Juli', 8 => 'Agustus',
+            9 => 'September', 10 => 'Oktober', 11 => 'November', 12 => 'Desember'
         ];
         
-        $carbon = \Carbon\Carbon::parse($date);
-        $month = $months[$carbon->format('F')];
+        $now = now();
+        $dayName = $days[$now->format('l')];
+        $day = $now->day;
+        $month = $months[$now->month];
+        $year = $now->year;
         
-        return $carbon->format('d') . ' ' . $month . ' ' . $carbon->format('Y');
+        return "{$dayName}, {$day} {$month} {$year}";
     }
 }
