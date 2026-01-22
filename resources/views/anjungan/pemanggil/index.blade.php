@@ -69,13 +69,13 @@
             <i class="fa fa-arrow-left"></i> Kembali
         </a>
         
-        <h1>
+        <h2>
             <i class="fas {{ $config['icon'] }}"></i>
             {{ $config['full_label'] }}
             @if(isset($config['badge']))
                 <span class="vip-badge">{{ $config['badge'] }}</span>
             @endif
-        </h1>
+        </h2>
     </div>
 
     <!-- Queue Panels -->
@@ -85,12 +85,14 @@
                 :config="$config" 
                 :loket="$value" 
                 :antrian="$antrian"
-                :panggil_loket="$panggil_loket">
+                :panggil_loket="$panggil_loket"
+                data-queue-type="{{ $config['type'] }}">
                 <x-queue-controls 
                     :antrian="$antrian" 
                     :loket="$value"
                     :config="$config"
-                    :panggil_loket="$panggil_loket" />
+                    :panggil_loket="$panggil_loket"
+                    :max_antrian="$noantrian" />
             </x-queue-panel>
         @endif
     @endforeach
@@ -105,7 +107,7 @@
     <x-instructions 
         title="Panduan Penggunaan"
         :items="[
-            ['icon' => 'fa-forward', 'title' => 'Berikutnya (→)', 'text' => 'Panggil antrian selanjutnya'],
+            ['icon' => 'fa-forward', 'title' => 'Berikutnya (→)', 'text' => 'Panggil antrian selanjutnya secara otomatis'],
             ['icon' => 'fa-bullhorn', 'title' => 'Panggil (🔔)', 'text' => 'Panggil ulang antrian yang sama'],
             ['icon' => 'fa-keyboard', 'title' => 'Lompat', 'text' => 'Masukkan nomor untuk loncat ke antrian tertentu'],
             ['icon' => 'fa-info-circle', 'title' => 'Total', 'text' => 'Antrian hari ini: ' . $noantrian]
@@ -117,42 +119,45 @@
     <script src="{{ asset('js/partials/utils.js') }}"></script>
     <script>
     const CSRF_TOKEN = '{{ csrf_token() }}';
+    const CURRENT_TYPE = '{{ str_replace("panggil_", "", $panggil_loket ?? "") }}';
 
+    /**
+     * Panggil antrian (untuk tombol "Panggil" saja)
+     * Fungsi ini HANYA dipanggil dari tombol Panggil, BUKAN dari Next/Lompat
+     */
     function panggil(noantrian, loket = '1', audioName = 'a') {
-        console.log('🔊 Panggil:', { noantrian, loket, audioName });
+        console.log('🔊 Manual Panggil:', { noantrian, loket, audioName });
+        
+        // Play audio sequence
         playAntrianSequence(noantrian, loket, audioName);
         
+        // Update database (set status = 1)
         $.ajax({
-            url: '/anjungan/api/setpanggil',
+            url: '{{ route("anjungan.api.setpanggil") }}',
             type: 'POST',
-            dataType: 'json',
+            headers: {
+                'X-CSRF-TOKEN': CSRF_TOKEN
+            },
             data: {
                 noantrian: noantrian,
-                type: '{{ str_replace("panggil_", "", $panggil_loket ?? "") }}',
+                type: CURRENT_TYPE,
                 loket: loket,
             },
             success: function(data) {
-                console.log('✅ Panggil berhasil');
+                console.log('✅ Set panggil berhasil:', data);
             },
             error: function(xhr) {
-                console.error('❌ Panggil gagal');
-                showToast('Gagal memanggil antrian', 'error');
+                console.error('❌ Set panggil gagal:', xhr);
+                if(typeof showToast === 'function') {
+                    showToast('Gagal memanggil antrian', 'error');
+                }
             }
         });
     }
 
-    // Auto-play on next button
-    document.addEventListener('DOMContentLoaded', function() {
-        var params = new URLSearchParams(window.location.search);
-        if(params.get('loket') && !params.get('skip_audio')) {
-            var antrian = {{ $antrian ?? 0 }};
-            if(antrian > 0) {
-                setTimeout(() => {
-                    panggil(antrian, params.get('loket'), '{{ $config['audio_name'] ?? 'a' }}');
-                }, 500);
-            }
-        }
-    });
+    // ❌ REMOVED: DOMContentLoaded auto-play
+    // Sekarang audio HANYA main saat klik tombol "Panggil"
+    // Tombol "Berikutnya" dan "Lompat" TIDAK auto-play audio
     </script>
 @endpush
 

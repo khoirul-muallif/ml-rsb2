@@ -12,9 +12,9 @@
     
     <div class="panel-body text-center">
         <h2 class="panel-title">
-            <span style="font-weight: 700;">{{ $config['prefix'] }}</span>{{ $antrian }}
+            <span style="font-weight: 700;">{{ $config['prefix'] }}{{ $antrian }}</span>
         </h2>
-        <p class="text-muted mt-3">Nomor Antrian Saat Ini</p>
+        <p class="text-muted tengah mt-3">Nomor Antrian Saat Ini</p>
     </div>
     
     <div class="panel-footer">
@@ -23,6 +23,9 @@
 </div>
 
 <style>
+.tengah {
+  text-align: center; /* Ini akan memusatkan teks secara horizontal */
+}
 .panel {
     background: #fff;
     border-radius: 15px;
@@ -43,6 +46,7 @@
     padding: 15px;
     font-weight: 600;
     font-size: 24px;
+    text-align: center;
 }
 
 .panel-body {
@@ -51,6 +55,7 @@
 
 .panel-title {
     font-size: 72px;
+    text-align: center;
     font-weight: 300;
     margin: 0;
     padding: 0;

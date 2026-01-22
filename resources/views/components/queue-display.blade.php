@@ -12,7 +12,7 @@
     </div>
     
     <div class="queue-display-number" style="color: {{ $config['color']['from'] ?? '#0264d6' }}">
-        <span class="prefix">{{ $config['prefix'] ?? 'A' }}</span>{{ $antrian }}
+        <span class="prefix">{{ $config['prefix'] ?? 'A' }}{{ $antrian }}</span>
     </div>
     
     <div class="queue-display-counter">
