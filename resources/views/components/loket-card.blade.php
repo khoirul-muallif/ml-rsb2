@@ -1,8 +1,9 @@
-{{-- Loket Service Card Component --}}
+{{-- Loket Service Card Component dengan Nomor Selanjutnya --}}
 @props([
     'config' => [],
     'type' => 'loket',
-    'stats' => []
+    'stats' => [],
+    'nextNumber' => 0
 ])
 
 <div class="loket-card" style="--color-from: {{ $config['color']['from'] }}; --color-to: {{ $config['color']['to'] }};">
@@ -17,6 +18,16 @@
     <div class="loket-label">{{ $config['label'] }}</div>
     <div class="loket-desc">{{ $config['full_label'] }}</div>
     
+    <!-- Nomor Selanjutnya -->
+    <div class="next-number-section">
+        <span class="next-label">Nomor Selanjutnya</span>
+        <span class="next-number" style="color: {{ $config['color']['from'] }}">
+            {{ $config['prefix'] }}<span id="next-{{ $type }}">{{ $nextNumber + 1 }}</span>
+            {{-- ✅ UBAH dari str_pad() ke langsung $nextNumber + 1 --}}
+        </span>
+    </div>
+    
+    <!-- Stats -->
     <div class="loket-stats">
         <div class="stat-item">
             <div class="stat-number" id="total-{{ $type }}">{{ $stats['total'] ?? 0 }}</div>
@@ -41,6 +52,9 @@
     border: 4px solid transparent;
     position: relative;
     overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
 }
 
 .loket-card::before {
@@ -92,6 +106,34 @@
     margin-bottom: 20px;
 }
 
+/* ✅ Nomor Selanjutnya */
+.next-number-section {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin: 20px 0;
+    padding: 20px;
+    background: rgba(0,0,0,0.03);
+    border-radius: 12px;
+    border: 2px dashed var(--color-from);
+}
+
+.next-label {
+    font-size: 12px;
+    color: #999;
+    text-transform: uppercase;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+}
+
+.next-number {
+    font-size: 42px;
+    font-weight: 700;
+    line-height: 1;
+    font-family: 'Arial', sans-serif;
+}
+
+/* Stats */
 .loket-stats {
     display: flex;
     justify-content: space-around;
@@ -114,5 +156,19 @@
     font-size: 12px;
     color: #999;
     text-transform: uppercase;
+}
+
+@media (max-width: 768px) {
+    .loket-card {
+        padding: 25px 20px;
+    }
+    
+    .next-number {
+        font-size: 36px;
+    }
+    
+    .loket-icon {
+        font-size: 48px;
+    }
 }
 </style>

@@ -38,7 +38,8 @@ class DisplayAntrianController extends Controller
         
         if ($type) {
             // SINGLE DISPLAY - tampilkan 1 loket
-            return view('anjungan.display.single', [
+            // return view('anjungan.display.single', [
+            return view('anjungan.display.index', [
                 'config' => $config,
                 'logo' => $logo,
                 'video_id' => $videoId,

@@ -7,8 +7,15 @@
     <style>
         body {
             background: linear-gradient(135deg, {{ $config['color']['from'] }} 0%, {{ $config['color']['to'] }} 100%);
-            height: 100vh;
+            min-height: 100vh;
             overflow: hidden;
+            padding-bottom: 100px;
+        }
+
+        .display-header {
+            position: sticky;
+            top: 0;
+            z-index: 100;
         }
 
         .main-container {
@@ -26,11 +33,29 @@
             box-shadow: 0 10px 40px rgba(0,0,0,0.3);
         }
 
+        .video-iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+
         .queue-section {
             flex: 1;
             display: flex;
             flex-direction: column;
             gap: 20px;
+            overflow-y: auto;
+        }
+
+        /* ✅ GUNAKAN .queue-display (bukan .queue-display-card) */
+        .queue-section > .queue-display {
+            flex: 2; /* 2/3 dari space */
+            min-height: 0; /* Penting! Biar flex bekerja dengan overflow */
+        }
+
+        .queue-section > .stats-section {
+            flex: 1; /* 1/3 dari space */
+            min-height: 0; /* Penting! */
         }
 
         .stats-section {
@@ -38,6 +63,7 @@
             border-radius: 20px;
             padding: 30px;
             box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+            overflow-y: auto;
         }
 
         .stats-grid {
@@ -67,6 +93,22 @@
             margin-top: 5px;
         }
 
+        .running-text-wrapper {
+            position: fixed;
+            bottom: 50px;
+            left: 0;
+            right: 0;
+            z-index: 50;
+        }
+
+        .footer-wrapper {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            z-index: 100;
+        }
+
         @media (max-width: 1024px) {
             .main-container {
                 flex-direction: column;
@@ -83,18 +125,24 @@
             .queue-section {
                 flex: 1;
             }
+            
+            .queue-section > .queue-display {
+                flex: auto;
+            }
         }
     </style>
 @endpush
 
 @section('content')
     <!-- Header -->
-    <x-display-header 
-        :config="$config"
-        :logo="$logo ?? null"
-        :company="$nama_instansi"
-        :date="$tanggal"
-    />
+    
+        <x-display-header 
+            :config="$config"
+            :logo="$logo ?? null"
+            :company="$nama_instansi"
+            :date="$tanggal"
+        />
+    
 
     <!-- Main Container -->
     <div class="main-container">
@@ -102,8 +150,9 @@
         <div class="video-section">
             @if($video_id)
                 <iframe 
-                    style="width:100%;height:100%;border:none"
-                    src="https://www.youtube.com/embed/{{ $video_id }}?rel=0&autoplay=1&loop=1&playlist={{ $video_id }}"
+                    class="video-iframe"
+                    src="https://www.youtube.com/embed/{{ $video_id }}?rel=0&modestbranding=1&autohide=1&mute=0&showinfo=0&controls=1&loop=1&autoplay=1&playlist={{ $video_id }}"
+                    allowfullscreen
                     allow="autoplay">
                 </iframe>
             @else
@@ -115,29 +164,26 @@
 
         <!-- Queue Display & Stats -->
         <div class="queue-section">
-            <x-queue-display 
-                :config="$config"
-                :antrian="$antrian ?? '-'"
-                :counter="$counter ?? '-'"
-                :stats="$stats ?? null"
-            />
+            <!-- Queue Display -->
+            <x-queue-display :config="$config" />
 
+            <!-- Stats Section -->
             <div class="stats-section">
                 <div class="stats-grid">
                     <div class="stat-item">
-                        <span class="stat-number" id="stat-total">{{ $stats['total'] ?? 0 }}</span>
+                        <span class="stat-number" id="stat-total">0</span>
                         <div class="stat-label">Total Antrian</div>
                     </div>
                     <div class="stat-item">
-                        <span class="stat-number" id="stat-selesai">{{ $stats['selesai'] ?? 0 }}</span>
+                        <span class="stat-number" id="stat-selesai">0</span>
                         <div class="stat-label">Selesai</div>
                     </div>
                     <div class="stat-item">
-                        <span class="stat-number" id="stat-menunggu">{{ $stats['menunggu'] ?? 0 }}</span>
+                        <span class="stat-number" id="stat-menunggu">0</span>
                         <div class="stat-label">Menunggu</div>
                     </div>
                     <div class="stat-item">
-                        <span class="stat-number" id="stat-diproses">{{ $stats['diproses'] ?? 0 }}</span>
+                        <span class="stat-number" id="stat-diproses">0</span>
                         <div class="stat-label">Diproses</div>
                     </div>
                 </div>
@@ -146,19 +192,24 @@
     </div>
 
     <!-- Running Text -->
-    <x-running-text :text="$running_text" speed="30" />
+    <div class="running-text-wrapper">
+        <x-running-text :text="$running_text" speed="30" />
+    </div>
 
     <!-- Footer -->
-    <x-footer :company="$nama_instansi" powered="mLITE" :year="true" />
+    <div class="footer-wrapper">
+        <x-footer :company="$nama_instansi" powered="mLITE" :year="true" />
+    </div>
 
 @push('scripts')
     <script src="{{ asset('js/partials/audio.js') }}"></script>
     <script src="{{ asset('js/partials/utils.js') }}"></script>
     <script>
     const API_URL = '{{ route("anjungan.api.getdisplay") }}';
+    const STATS_URL = '{{ route("anjungan.api.getstats") }}';
     const TYPE = '{{ $config["type"] }}';
+    const CSRF_TOKEN = '{{ csrf_token() }}';
 
-    // Polling untuk update antrian
     function getAntrian() {
         $.ajax({
             url: API_URL + '?type=' + TYPE,
@@ -168,31 +219,33 @@
                 if(data.status) {
                     document.getElementById('current-number').textContent = data.noantrian;
                     document.getElementById('current-counter').textContent = data.loket;
-                    
-                    playAntrianSequence(data.noantrian, data.loket);
+                    playAntrianSequence(data.noantrian, data.loket, data.prefix.toLowerCase());
                     markAsSelesai(data.id);
                 }
                 setTimeout(getAntrian, 5000);
             },
-            error: function() {
+            error: function(xhr) {
+                console.error('Error getting antrian:', xhr);
                 setTimeout(getAntrian, 3000);
             }
         });
     }
 
-    // Polling untuk update stats
     function getStats() {
         $.ajax({
-            url: '{{ route("anjungan.api.getstats") }}?type=' + TYPE,
+            url: STATS_URL + '?type=' + TYPE,
             type: 'GET',
             dataType: 'json',
             success: function(data) {
                 if(data.status && data.stats) {
-                    document.getElementById('stat-total').textContent = data.stats.total;
-                    document.getElementById('stat-selesai').textContent = data.stats.selesai;
-                    document.getElementById('stat-menunggu').textContent = data.stats.menunggu;
-                    document.getElementById('stat-diproses').textContent = data.stats.diproses;
+                    document.getElementById('stat-total').textContent = data.stats.total || '0';
+                    document.getElementById('stat-selesai').textContent = data.stats.selesai || '0';
+                    document.getElementById('stat-menunggu').textContent = data.stats.menunggu || '0';
+                    document.getElementById('stat-diproses').textContent = data.stats.diproses || '0';
                 }
+            },
+            error: function(xhr) {
+                console.error('Error getting stats:', xhr);
             }
         });
     }
@@ -201,15 +254,23 @@
         $.ajax({
             url: '{{ route("anjungan.api.setdisplayselesai") }}',
             type: 'POST',
-            headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
-            data: { id: id }
+            headers: { 
+                'X-CSRF-TOKEN': CSRF_TOKEN,
+                'Content-Type': 'application/json'
+            },
+            data: JSON.stringify({ id: id }),
+            error: function(xhr) {
+                console.error('Error marking as selesai:', xhr);
+            }
         });
     }
 
-    // Start
-    setTimeout(getAntrian, 2000);
-    setInterval(getStats, 5000);
-    getStats();
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('Display initialized for type:', TYPE);
+        setTimeout(getAntrian, 2000);
+        setInterval(getStats, 5000);
+        getStats();
+    });
     </script>
 @endpush
 

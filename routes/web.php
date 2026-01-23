@@ -20,25 +20,47 @@ Route::prefix('anjungan')->name('anjungan.')->group(function () {
     // ================================================
     
     /**
-     * Halaman utama anjungan
+     * ✅ Halaman dashboard utama
      * GET /anjungan
      */
     Route::get('/', function () {
         return view('anjungan.index');
     })->name('index');
     
+    // ================================================
+    // MENU & LAYANAN ANTRIAN (ANJUNGAN PASIEN)
+    // ================================================
+    
     /**
-     * Halaman anjungan pasien - Ambil nomor antrian
-     * GET /anjungan/loket
+     * ✅ Menu utama - Pilih grup layanan
+     * GET /anjungan/menu
      */
-    Route::get('/loket', [AntrianLoketController::class, 'index'])
-        ->name('loket.index');
-
+    Route::get('/menu', [AntrianLoketController::class, 'menu'])
+        ->name('menu');
+    
     /**
-    * API: Ambil nomor antrian baru
-    * POST /anjungan/loket/ambil
-    */
-    Route::post('/loket/ambil', [AntrianLoketController::class, 'ambil']);
+     * ✅ Halaman per grup layanan
+     * GET /anjungan/layanan/loket
+     * GET /anjungan/layanan/cs
+     * GET /anjungan/layanan/apotek
+     */
+    Route::prefix('layanan')->name('layanan.')->group(function () {
+        Route::get('/loket', [AntrianLoketController::class, 'loket'])->name('loket');
+        Route::get('/cs', [AntrianLoketController::class, 'cs'])->name('cs');
+        Route::get('/apotek', [AntrianLoketController::class, 'apotek'])->name('apotek');
+    });
+
+    // ================================================
+    // PEMANGGIL ANTRIAN (UNTUK PETUGAS)
+    // ================================================
+    
+    /**
+     * ✅ Menu pemanggil - Pilih loket yang akan dioperasikan
+     * GET /anjungan/pemanggil/menu
+     */
+    Route::get('/pemanggil/menu', function () {
+        return view('anjungan.pemanggil.menu');
+    })->name('pemanggil.menu');
     
     /**
      * Halaman pemanggil antrian (untuk petugas loket)
@@ -50,6 +72,10 @@ Route::prefix('anjungan')->name('anjungan.')->group(function () {
      */
     Route::get('/pemanggil', [PemanggilAntrianController::class, 'index'])
         ->name('pemanggil');
+    
+    // ================================================
+    // DISPLAY MONITOR (UNTUK TV/LAYAR TUNGGU)
+    // ================================================
     
     /**
      * Halaman display antrian (untuk TV/Monitor)
@@ -70,13 +96,44 @@ Route::prefix('anjungan')->name('anjungan.')->group(function () {
     Route::prefix('api')->name('api.')->group(function () {
         
         // -----------------------------------------------
+        // ANTRIAN API (untuk anjungan pasien)
+        // -----------------------------------------------
+        
+        /**
+         * API: Ambil nomor antrian baru
+         * POST /anjungan/api/ambil
+         */
+        Route::post('/ambil', [AntrianLoketController::class, 'ambil'])
+            ->name('ambil');
+        
+        /**
+         * API: Get summary antrian hari ini
+         * GET /anjungan/api/summary
+         */
+        Route::get('/summary', [AntrianLoketController::class, 'summary'])
+            ->name('summary');
+        
+        /**
+         * API: Get info antrian by ID
+         * GET /anjungan/api/info/{id}
+         */
+        Route::get('/info/{id}', [AntrianLoketController::class, 'info'])
+            ->name('info');
+        
+        /**
+         * API: Cek nomor antrian
+         * POST /anjungan/api/cek
+         */
+        Route::post('/cek', [AntrianLoketController::class, 'cek'])
+            ->name('cek');
+        
+        // -----------------------------------------------
         // PEMANGGIL API (untuk halaman pemanggil)
         // -----------------------------------------------
         
         /**
          * Set panggil antrian (dari tombol next/lompat)
          * POST /anjungan/api/setpanggil
-         * Body: { noantrian, type, loket }
          */
         Route::post('/setpanggil', [PemanggilAntrianController::class, 'setPanggil'])
             ->name('setpanggil');
@@ -84,7 +141,6 @@ Route::prefix('anjungan')->name('anjungan.')->group(function () {
         /**
          * Simpan nomor rekam medis
          * POST /anjungan/api/simpannorm
-         * Body: { noantrian, type, no_rkm_medis }
          */
         Route::post('/simpannorm', [PemanggilAntrianController::class, 'simpanNoRM'])
             ->name('simpannorm');
@@ -92,7 +148,6 @@ Route::prefix('anjungan')->name('anjungan.')->group(function () {
         /**
          * Reset antrian untuk type tertentu
          * POST /anjungan/api/reset/{type}
-         * Example: POST /anjungan/api/reset/loket
          */
         Route::post('/reset/{type}', [PemanggilAntrianController::class, 'resetAntrian'])
             ->name('reset');
@@ -104,7 +159,6 @@ Route::prefix('anjungan')->name('anjungan.')->group(function () {
         /**
          * Get antrian yang sedang dipanggil (untuk display)
          * GET /anjungan/api/getdisplay?type=Loket
-         * Response: { status, type, prefix, noantrian, loket, panggil[], id }
          */
         Route::get('/getdisplay', [DisplayAntrianController::class, 'getDisplay'])
             ->name('getdisplay');
@@ -112,7 +166,6 @@ Route::prefix('anjungan')->name('anjungan.')->group(function () {
         /**
          * Set display selesai (acknowledge dari display)
          * POST /anjungan/api/setdisplayselesai
-         * Body: { id }
          */
         Route::post('/setdisplayselesai', [DisplayAntrianController::class, 'setDisplaySelesai'])
             ->name('setdisplayselesai');
@@ -120,7 +173,6 @@ Route::prefix('anjungan')->name('anjungan.')->group(function () {
         /**
          * Get statistik antrian (untuk display stats)
          * GET /anjungan/api/getstats?type=Loket
-         * Response: { status, stats: { total, menunggu, diproses, selesai } }
          */
         Route::get('/getstats', [DisplayAntrianController::class, 'getStats'])
             ->name('getstats');

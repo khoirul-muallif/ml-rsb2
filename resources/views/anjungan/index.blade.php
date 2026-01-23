@@ -36,6 +36,15 @@
             padding: 0 20px;
         }
         
+        .section-title {
+            color: #fff;
+            font-size: 28px;
+            font-weight: 700;
+            text-align: center;
+            margin: 50px 0 30px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+        
         .loket-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
@@ -52,61 +61,56 @@
         <p id="current-datetime"></p>
     </div>
 
+    <!-- ========================================== -->
+    <!-- SECTION: ANJUNGAN PASIEN -->
+    <!-- ========================================== -->
+    <div class="section-title">
+        <i class="fas fa-users"></i> Anjungan Mandiri Pasien
+    </div>
+    
     <div class="loket-grid">
-        <!-- Loket Reguler -->
+        <!-- Menu Anjungan Pasien -->
         <x-dashboard-card 
-            icon="fa-door-open"
-            title="LOKET"
-            subtitle="Loket Pendaftaran Reguler"
-            href="{{ route('anjungan.pemanggil', ['show' => 'panggil_loket', 'loket' => 1]) }}"
+            icon="fa-ticket-alt"
+            title="ANJUNGAN PASIEN"
+            subtitle="Ambil Nomor Antrian (Loket, CS, Apotek)"
+            href="{{ route('anjungan.menu') }}"
             colorFrom="#28a745"
             colorTo="#20c997" />
+    </div>
 
-        <!-- Loket VIP -->
+    <!-- ========================================== -->
+    <!-- SECTION: PEMANGGIL ANTRIAN (PETUGAS) -->
+    <!-- ========================================== -->
+    <div class="section-title">
+        <i class="fas fa-user-tie"></i> Panel Petugas Loket
+    </div>
+    
+    <div class="loket-grid">
+        <!-- Menu Pemanggil -->
         <x-dashboard-card 
-            icon="fa-crown"
-            title="LOKET VIP"
-            subtitle="Loket Pendaftaran VIP"
-            href="{{ route('anjungan.pemanggil', ['show' => 'panggil_loket_vip', 'loket' => 1]) }}"
-            colorFrom="#ffd700"
-            colorTo="#ff9800"
-            badge="VIP" />
+            icon="fa-bullhorn"
+            title="PANEL PEMANGGIL"
+            subtitle="Pemanggil Antrian untuk Petugas (Loket, CS, Apotek)"
+            href="{{ route('anjungan.pemanggil.menu') }}"
+            colorFrom="#dc3545"
+            colorTo="#c82333" />
+    </div>
 
-        <!-- CS Reguler -->
-        <x-dashboard-card 
-            icon="fa-headset"
-            title="CUSTOMER SERVICE"
-            subtitle="Layanan Pelanggan Reguler"
-            {{-- href="{{ url('/anjungan/pemanggil?show=panggil_cs&loket=1') }}" --}}
-            href="{{ route('anjungan.pemanggil', ['show' => 'panggil_cs', 'loket' => 1]) }}"
-            colorFrom="#007bff"
-            colorTo="#0056b3" />
-
-        <!-- CS VIP -->
-        <x-dashboard-card 
-            icon="fa-concierge-bell"
-            title="CS VIP"
-            subtitle="Layanan Pelanggan VIP"
-            href="{{ route('anjungan.pemanggil', ['show' => 'panggil_cs_vip', 'loket' => 1]) }}"
-            colorFrom="#6f42c1"
-            colorTo="#5a32a3"
-            badge="VIP" />
-
-        <!-- Apotek -->
-        <x-dashboard-card 
-            icon="fa-pills"
-            title="APOTEK"
-            subtitle="Farmasi & Obat-Obatan"
-            href="{{ route('anjungan.pemanggil', ['show' => 'panggil_apotek', 'loket' => 1]) }}"
-            colorFrom="#ffc107"
-            colorTo="#ff9800" />
-
+    <!-- ========================================== -->
+    <!-- SECTION: DISPLAY MONITOR -->
+    <!-- ========================================== -->
+    <div class="section-title">
+        <i class="fas fa-tv"></i> Monitor Display
+    </div>
+    
+    <div class="loket-grid">
         <!-- Display Monitor -->
         <x-dashboard-card 
             icon="fa-tv"
             title="MONITOR DISPLAY"
             subtitle="Tampilan untuk TV / Monitor Ruang Tunggu"
-            href="{{ url('/anjungan/display') }}"
+            href="{{ route('anjungan.display') }}"
             colorFrom="#17a2b8"
             colorTo="#138496"
             isDisplay="true" />

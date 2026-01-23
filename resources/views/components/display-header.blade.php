@@ -6,24 +6,20 @@
 ])
 
 <div class="display-header">
-    <div class="display-header-left">
+    <div class="header-left">
         @if($logo && file_exists(public_path($logo)))
-            <img src="{{ asset($logo) }}" alt="Logo" class="display-header-logo">
+            <img src="{{ asset($logo) }}" alt="Logo" class="logo-img">
         @else
-            <i class="fas fa-hospital" style="font-size: 50px; opacity: 0.7;"></i>
+            <i class="fa fa-hospital fa-3x" style="color: {{ $config['color']['from'] ?? '#667eea' }}"></i>
         @endif
-        
-        <div class="display-header-info">
-            <h1 class="display-header-title">{{ $config['full_label'] ?? 'Display Antrian' }}</h1>
-            <p class="display-header-company">{{ $company }}</p>
+        <div class="header-title">
+            <h1>{{ $config['full_label'] ?? 'Display Antrian' }}</h1>
+            <p>{{ $company }}</p>
         </div>
     </div>
-
-    <div class="display-header-right">
-        @if($date)
-            <div class="display-header-date">{{ $date }}</div>
-        @endif
-        <div class="display-header-time" id="display-time">--:--:--</div>
+    <div class="header-right">
+        <div class="header-date">{{ $date }}</div>
+        <div class="header-time" id="header-time-display">--:--:--</div>
     </div>
 </div>
 
@@ -35,91 +31,85 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 30px;
 }
 
-.display-header-left {
+.header-left {
     display: flex;
     align-items: center;
     gap: 20px;
-    flex: 1;
 }
 
-.display-header-logo {
+.logo-img {
+    width: 70px;
     height: 70px;
     object-fit: contain;
 }
 
-.display-header-info {
-    display: flex;
-    flex-direction: column;
-    gap: 5px;
-}
-
-.display-header-title {
-    font-size: 28px;
-    font-weight: 700;
-    margin: 0;
+.header-title {
     color: #333;
 }
 
-.display-header-company {
-    font-size: 14px;
+.header-title h1 {
+    font-size: 32px;
+    font-weight: 700;
     margin: 0;
-    color: #666;
-    opacity: 0.8;
+    color: {{ $config['color']['from'] ?? '#667eea' }};
 }
 
-.display-header-right {
-    text-align: right;
-    display: flex;
-    flex-direction: column;
-    gap: 5px;
-}
-
-.display-header-date {
-    font-size: 14px;
+.header-title p {
+    font-size: 18px;
+    margin: 0;
     color: #666;
     font-weight: 600;
 }
 
-.display-header-time {
-    font-size: 24px;
+.header-right {
+    text-align: right;
     color: #333;
+}
+
+.header-date {
+    font-size: 16px;
+    color: #d9534f;
     font-weight: 700;
 }
 
-@media (max-width: 1024px) {
+.header-time {
+    font-size: 28px;
+    color: {{ $config['color']['from'] ?? '#667eea' }};
+    font-weight: 700;
+}
+
+@media (max-width: 768px) {
     .display-header {
-        padding: 15px 20px;
-        flex-wrap: wrap;
+        flex-direction: column;
+        text-align: center;
+        gap: 15px;
     }
     
-    .display-header-title {
-        font-size: 22px;
+    .header-left {
+        flex-direction: column;
     }
     
-    .display-header-time {
-        font-size: 20px;
+    .header-right {
+        text-align: center;
     }
 }
 </style>
 
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    function updateTime() {
-        const now = new Date();
-        const timeEl = document.getElementById('display-time');
-        if(timeEl) {
-            timeEl.textContent = now.toLocaleTimeString('id-ID', {
-                hour: '2-digit',
-                minute: '2-digit',
-                second: '2-digit'
-            });
-        }
-    }
-    
-    updateTime();
-    setInterval(updateTime, 1000);
-});
+// Update clock in header
+function updateHeaderClock() {
+    const now = new Date();
+    const time = now.toLocaleTimeString('id-ID', { 
+        hour: '2-digit', 
+        minute: '2-digit', 
+        second: '2-digit' 
+    });
+    const el = document.getElementById('header-time-display');
+    if (el) el.textContent = time;
+}
+
+setInterval(updateHeaderClock, 1000);
+updateHeaderClock();
 </script>
