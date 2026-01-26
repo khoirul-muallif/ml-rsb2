@@ -1,3 +1,4 @@
+{{-- resources\views\anjungan\layanan\loket.blade.php --}}
 @extends('layouts.app')
 
 @section('title', 'Loket Pendaftaran')
@@ -87,7 +88,7 @@
     <!-- Main Container -->
     <div class="main-container">
         <!-- Back Button -->
-        <div class="back-button" onclick="window.location.href='{{ route('anjungan.menu') }}'">
+        <div class="back-button" onclick="window.location.href='{{ route('anjungan.index') }}'">
             <i class="fas fa-arrow-left"></i>
             <span>Kembali ke Menu Utama</span>
         </div>

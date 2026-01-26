@@ -1,3 +1,4 @@
+{{-- E:\laragon\www\ml-rsb2\resources\views\anjungan\display\index.blade.php --}}
 @extends('layouts.app')
 
 @section('title', $config['full_label'] . ' - Display Antrian')

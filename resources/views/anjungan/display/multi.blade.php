@@ -1,3 +1,4 @@
+{{--E:\laragon\www\ml-rsb2\resources\views\anjungan\display\multi.blade.php  --}}
 @extends('layouts.app')
 
 @section('title', 'Display Antrian - Semua Loket')

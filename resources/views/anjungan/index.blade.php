@@ -74,7 +74,7 @@
             icon="fa-ticket-alt"
             title="ANJUNGAN PASIEN"
             subtitle="Ambil Nomor Antrian (Loket, CS, Apotek)"
-            href="{{ route('anjungan.menu') }}"
+            href="{{ route('anjungan.layanan.menu') }}"
             colorFrom="#28a745"
             colorTo="#20c997" />
     </div>
@@ -105,12 +105,12 @@
     </div>
     
     <div class="loket-grid">
-        <!-- Display Monitor -->
+        <!-- Menu Display -->
         <x-dashboard-card 
             icon="fa-tv"
             title="MONITOR DISPLAY"
-            subtitle="Tampilan untuk TV / Monitor Ruang Tunggu"
-            href="{{ route('anjungan.display') }}"
+            subtitle="Tampilan untuk TV / Monitor Ruang Tunggu (Semua Loket)"
+            href="{{ route('anjungan.display.menu') }}"
             colorFrom="#17a2b8"
             colorTo="#138496"
             isDisplay="true" />

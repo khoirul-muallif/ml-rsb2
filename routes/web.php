@@ -33,10 +33,10 @@ Route::prefix('anjungan')->name('anjungan.')->group(function () {
     
     /**
      * ✅ Menu utama - Pilih grup layanan
-     * GET /anjungan/menu
+     * GET /anjungan/layanan/menu
      */
-    Route::get('/menu', [AntrianLoketController::class, 'menu'])
-        ->name('menu');
+    Route::get('/layanan/menu', [AntrianLoketController::class, 'menu'])
+        ->name('layanan.menu');
     
     /**
      * ✅ Halaman per grup layanan
@@ -76,6 +76,14 @@ Route::prefix('anjungan')->name('anjungan.')->group(function () {
     // ================================================
     // DISPLAY MONITOR (UNTUK TV/LAYAR TUNGGU)
     // ================================================
+    
+    /**
+     * ✅ Menu display - Pilih display yang akan ditampilkan
+     * GET /anjungan/display/menu
+     */
+    Route::get('/display/menu', function () {
+        return view('anjungan.display.menu');
+    })->name('display.menu');
     
     /**
      * Halaman display antrian (untuk TV/Monitor)

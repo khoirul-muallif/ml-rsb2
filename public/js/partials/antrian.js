@@ -1,3 +1,4 @@
+// E:\laragon\www\ml-rsb2\public\js\partials\antrian.js
 /**
  * Panggil antrian
  */

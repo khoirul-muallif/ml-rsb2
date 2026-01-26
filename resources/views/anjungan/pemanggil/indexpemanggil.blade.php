@@ -280,7 +280,7 @@
         });
         
         // Putar suara
-        playAntrianSequence(noantrian, loket, type);
+        //playAntrianSequence(noantrian, loket, type);
         
         // Kirim ke server
         $.ajax({

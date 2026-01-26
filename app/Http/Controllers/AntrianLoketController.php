@@ -21,7 +21,7 @@ class AntrianLoketController extends Controller
         $alamat = MliteSetting::getSetting('settings', 'alamat', '');
         $runningText = MliteSetting::getSetting('anjungan', 'text_anjungan', 'Selamat datang');
         
-        return view('anjungan.loket.menu', [
+        return view('anjungan.layanan.menu', [
             'logo' => $logo,
             'nama_instansi' => $namaInstansi,
             'alamat' => $alamat,
@@ -34,7 +34,7 @@ class AntrianLoketController extends Controller
      */
     public function loket()
     {
-        return $this->showGroup(['Loket', 'LoketVIP'], 'anjungan.loket.loket');
+        return $this->showGroup(['Loket', 'LoketVIP'], 'anjungan.layanan.loket');
     }
 
     /**
@@ -42,7 +42,7 @@ class AntrianLoketController extends Controller
      */
     public function cs()
     {
-        return $this->showGroup(['CS', 'CSVIP'], 'anjungan.loket.cs');
+        return $this->showGroup(['CS', 'CSVIP'], 'anjungan.layanan.cs');
     }
 
     /**
@@ -50,7 +50,7 @@ class AntrianLoketController extends Controller
      */
     public function apotek()
     {
-        return $this->showGroup(['Apotek'], 'anjungan.loket.apotek');
+        return $this->showGroup(['Apotek'], 'anjungan.layanan.apotek');
     }
 
     /**
