@@ -48,15 +48,14 @@
             overflow-y: auto;
         }
 
-        /* ✅ GUNAKAN .queue-display (bukan .queue-display-card) */
         .queue-section > .queue-display {
-            flex: 2; /* 2/3 dari space */
-            min-height: 0; /* Penting! Biar flex bekerja dengan overflow */
+            flex: 2;
+            min-height: 0;
         }
 
         .queue-section > .stats-section {
-            flex: 1; /* 1/3 dari space */
-            min-height: 0; /* Penting! */
+            flex: 1;
+            min-height: 0;
         }
 
         .stats-section {
@@ -136,14 +135,12 @@
 
 @section('content')
     <!-- Header -->
-    
-        <x-display-header 
-            :config="$config"
-            :logo="$logo ?? null"
-            :company="$nama_instansi"
-            :date="$tanggal"
-        />
-    
+    <x-display-header 
+        :config="$config"
+        :logo="$logo ?? null"
+        :company="$nama_instansi"
+        :date="$tanggal"
+    />
 
     <!-- Main Container -->
     <div class="main-container">
@@ -211,6 +208,9 @@
     const TYPE = '{{ $config["type"] }}';
     const CSRF_TOKEN = '{{ csrf_token() }}';
 
+    // ✅ FIX: Tracking dengan timestamp untuk deteksi panggil ulang
+    let lastPlayedKey = null;
+
     function getAntrian() {
         $.ajax({
             url: API_URL + '?type=' + TYPE,
@@ -218,15 +218,41 @@
             dataType: 'json',
             success: function(data) {
                 if(data.status) {
+                    // Update tampilan
                     document.getElementById('current-number').textContent = data.noantrian;
                     document.getElementById('current-counter').textContent = data.loket;
-                    playAntrianSequence(data.noantrian, data.loket, data.prefix.toLowerCase());
-                    markAsSelesai(data.id);
+                    
+                    // ✅ FIX: Gunakan timestamp untuk deteksi perubahan
+                    // Key format: "nomor-loket-timestamp"
+                    // Jadi jika petugas klik "Panggil" lagi, timestamp berubah → audio play
+                    const currentKey = data.noantrian + '-' + data.loket + '-' + data.timestamp;
+                    
+                    if(currentKey !== lastPlayedKey) {
+                        console.log('🔊 Panggil terdeteksi:', {
+                            nomor: data.noantrian,
+                            loket: data.loket,
+                            timestamp: data.timestamp,
+                            reason: lastPlayedKey ? 'Nomor baru atau panggil ulang' : 'Pertama kali'
+                        });
+                        
+                        playAntrianSequence(data.noantrian, data.loket, data.prefix.toLowerCase());
+                        
+                        // Update tracking
+                        lastPlayedKey = currentKey;
+                        
+                        // Mark as selesai
+                        markAsSelesai(data.id);
+                    } else {
+                        console.log('⏭️ Nomor sama, skip audio:', currentKey);
+                    }
                 }
+                
+                // Polling lagi setelah 5 detik
                 setTimeout(getAntrian, 5000);
             },
             error: function(xhr) {
-                console.error('Error getting antrian:', xhr);
+                console.error('❌ Error getting antrian:', xhr);
+                // Retry setelah 3 detik jika error
                 setTimeout(getAntrian, 3000);
             }
         });
@@ -246,7 +272,7 @@
                 }
             },
             error: function(xhr) {
-                console.error('Error getting stats:', xhr);
+                console.error('❌ Error getting stats:', xhr);
             }
         });
     }
@@ -261,14 +287,18 @@
             },
             data: JSON.stringify({ id: id }),
             error: function(xhr) {
-                console.error('Error marking as selesai:', xhr);
+                console.error('❌ Error marking as selesai:', xhr);
             }
         });
     }
 
     document.addEventListener('DOMContentLoaded', function() {
-        console.log('Display initialized for type:', TYPE);
+        console.log('📺 Display initialized for type:', TYPE);
+        
+        // Start polling setelah 2 detik
         setTimeout(getAntrian, 2000);
+        
+        // Update stats setiap 5 detik
         setInterval(getStats, 5000);
         getStats();
     });

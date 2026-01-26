@@ -38,7 +38,6 @@ class DisplayAntrianController extends Controller
         
         if ($type) {
             // SINGLE DISPLAY - tampilkan 1 loket
-            // return view('anjungan.display.single', [
             return view('anjungan.display.index', [
                 'config' => $config,
                 'logo' => $logo,
@@ -68,7 +67,7 @@ class DisplayAntrianController extends Controller
     }
 
     /**
-     * ✅ FIXED: API Get antrian yang sedang dipanggil
+     * ✅ FIXED: API Get antrian dengan timestamp untuk deteksi panggil ulang
      */
     public function getDisplay(Request $request)
     {
@@ -95,16 +94,6 @@ class DisplayAntrianController extends Controller
             ]);
         }
         
-        // Cek cache untuk prevent duplicate display
-        $cacheKey = "display_shown_{$type}_{$nomorTerkini}";
-        
-        if (Cache::has($cacheKey)) {
-            return response()->json([
-                'status' => false,
-                'message' => 'Antrian sudah ditampilkan'
-            ]);
-        }
-        
         // Ambil data antrian dari database
         $antrian = AntrianLoket::where('type', $type)
             ->where('noantrian', $nomorTerkini)
@@ -118,9 +107,6 @@ class DisplayAntrianController extends Controller
             ]);
         }
         
-        // Mark as shown in cache (expire after 10 seconds)
-        Cache::put($cacheKey, true, now()->addSeconds(10));
-        
         // Get config untuk prefix dan audio
         $config = AntrianHelper::getByType($type);
         
@@ -131,7 +117,8 @@ class DisplayAntrianController extends Controller
             'noantrian' => $antrian->noantrian,
             'loket' => $loketTerkini,
             'panggil' => $this->generateAudioSequence($type, $nomorTerkini, $loketTerkini),
-            'id' => $antrian->kd
+            'id' => $antrian->kd,
+            'timestamp' => $antrian->end_time  // ✅ NEW: Timestamp untuk deteksi panggil ulang
         ]);
     }
 
@@ -202,7 +189,13 @@ class DisplayAntrianController extends Controller
         
         $config = AntrianHelper::getByType($type);
         $prefix = strtolower($config['audio_name'] ?? $config['prefix']);
-        $files[] = $prefix;
+        
+        // ✅ FIX: Split multi-character prefix jadi per huruf
+        // Contoh: "bv" → ['b', 'v'], "cs" → ['c', 's']
+        $prefixChars = str_split($prefix);
+        foreach($prefixChars as $char) {
+            $files[] = $char;
+        }
         
         $this->convertNumberToIndonesianAudio($noantrian, $files);
         

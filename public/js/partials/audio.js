@@ -1,4 +1,5 @@
 // E:\laragon\www\ml-rsb2\public\js\partials\audio.js
+
 /**
  * Convert number to Indonesian audio sequence
  */
@@ -56,6 +57,8 @@ function playAudioSequence(playlist, index = 0) {
         return;
     }
     
+    console.log('🔊 Playing (' + (index + 1) + '/' + playlist.length + '):', playlist[index]);
+    
     var audio = new Audio(playlist[index]);
     audio.volume = 1.0;
     audio.preload = 'auto';
@@ -66,22 +69,37 @@ function playAudioSequence(playlist, index = 0) {
     });
     
     audio.onended = () => setTimeout(() => playAudioSequence(playlist, index + 1), 150);
-    audio.onerror = () => setTimeout(() => playAudioSequence(playlist, index + 1), 100);
+    audio.onerror = () => {
+        console.error('❌ File not found:', playlist[index]);
+        setTimeout(() => playAudioSequence(playlist, index + 1), 100);
+    };
 }
 
 /**
  * Play antrian sequence with prefix
+ * ✅ FIXED: Support multi-character prefix (split jadi per huruf)
  */
 function playAntrianSequence(noantrian, loket, audioName = 'a') {
     var playlist = [];
     var baseUrl = '/plugins/anjungan/suara';
     
+    // 1. Antrian
     playlist.push(baseUrl + '/antrian.wav');
-    playlist.push(baseUrl + '/' + audioName + '.wav');
+    
+    // 2. Prefix (split jika multi-character)
+    // Contoh: 'bv' → ['b', 'v'], 'cs' → ['c', 's']
+    var prefixChars = audioName.split('');
+    for(var i = 0; i < prefixChars.length; i++) {
+        playlist.push(baseUrl + '/' + prefixChars[i] + '.wav');
+    }
+    
+    // 3. Nomor antrian
     convertToIndonesianAudio(noantrian, playlist, baseUrl);
     
+    // 4. Counter
     if(loket) {
         playlist.push(baseUrl + '/counter.wav');
+        // 5. Nomor loket
         convertToIndonesianAudio(loket, playlist, baseUrl);
     }
     

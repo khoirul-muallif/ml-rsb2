@@ -1,4 +1,4 @@
-{{--E:\laragon\www\ml-rsb2\resources\views\anjungan\display\multi.blade.php  --}}
+{{-- E:\laragon\www\ml-rsb2\resources\views\anjungan\display\multi.blade.php --}}
 @extends('layouts.app')
 
 @section('title', 'Display Antrian - Semua Loket')
@@ -69,7 +69,10 @@
     <!-- Multi Display Grid -->
     <div class="display-multi-container">
         @foreach($all_configs as $type => $config)
-            <div class="display-card-wrapper" style="border-color: {{ $config['color']['from'] ?? '#667eea' }}">
+            <div class="display-card-wrapper" 
+                 style="border-color: {{ $config['color']['from'] ?? '#667eea' }}"
+                 data-type="{{ $type }}"
+                 data-audio-name="{{ strtolower($config['audio_name'] ?? $config['prefix']) }}">
                 <div class="card-title" style="color: {{ $config['color']['from'] ?? '#667eea' }}">
                     <i class="fa {{ $config['icon'] ?? 'fa-door-open' }}"></i> {{ $config['label'] }}
                 </div>
@@ -95,7 +98,18 @@
     <script src="{{ asset('js/partials/audio.js') }}"></script>
     <script src="{{ asset('js/partials/utils.js') }}"></script>
     <script>
-    // Polling untuk semua loket
+    // ✅ FIX: Tracking nomor terakhir per loket
+    const lastPlayed = {
+        'Loket': null,
+        'LoketVIP': null,
+        'CS': null,
+        'CSVIP': null,
+        'Apotek': null
+    };
+
+    /**
+     * ✅ FIX: Polling dengan pengecekan perubahan nomor
+     */
     function pollAllDisplays() {
         const types = ['Loket', 'LoketVIP', 'CS', 'CSVIP', 'Apotek'];
         
@@ -106,9 +120,33 @@
                 dataType: 'json',
                 success: function(data) {
                     if(data.status) {
+                        // Update tampilan
                         document.getElementById('num-' + type).textContent = data.noantrian;
                         document.getElementById('counter-' + type).textContent = data.loket;
-                        playAntrianSequence(data.noantrian, data.loket);
+                        
+                        // ✅ FIX: Hanya putar audio jika nomor BERUBAH
+                        const currentKey = data.noantrian + '-' + data.loket;
+                        
+                        if(lastPlayed[type] !== currentKey) {
+                            console.log('🔊 [' + type + '] Nomor baru:', currentKey, '(sebelumnya:', lastPlayed[type], ')');
+                            
+                            // Ambil audio_name dari card
+                            const card = document.querySelector('[data-type="' + type + '"]');
+                            const audioName = card ? card.dataset.audioName : 'a';
+                            
+                            playAntrianSequence(data.noantrian, data.loket, audioName);
+                            
+                            // Update tracking
+                            lastPlayed[type] = currentKey;
+                        } else {
+                            console.log('⏭️ [' + type + '] Nomor sama, skip audio:', currentKey);
+                        }
+                    }
+                },
+                error: function(xhr) {
+                    // Ignore errors untuk multi display (agar tidak spam console)
+                    if(xhr.status !== 404) {
+                        console.error('❌ [' + type + '] Error:', xhr.status);
                     }
                 }
             });
@@ -116,8 +154,15 @@
     }
 
     // Start polling
-    setInterval(pollAllDisplays, 5000);
-    pollAllDisplays();
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('📺 Multi-display initialized');
+        
+        // First poll after 2 seconds
+        setTimeout(pollAllDisplays, 2000);
+        
+        // Then poll every 5 seconds
+        setInterval(pollAllDisplays, 5000);
+    });
     </script>
 @endpush
 
