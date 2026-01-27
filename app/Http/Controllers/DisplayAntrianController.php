@@ -110,6 +110,10 @@ class DisplayAntrianController extends Controller
         // Get config untuk prefix dan audio
         $config = AntrianHelper::getByType($type);
         
+        // ✅ NEW: Get play_audio flag
+        $fieldPrefix = $this->getFieldPrefix($type);
+        $playAudio = (int) MliteSetting::getSetting('anjungan', "play_audio_{$fieldPrefix}", 1);
+        
         return response()->json([
             'status' => true,
             'type' => $antrian->type,
@@ -118,7 +122,8 @@ class DisplayAntrianController extends Controller
             'loket' => $loketTerkini,
             'panggil' => $this->generateAudioSequence($type, $nomorTerkini, $loketTerkini),
             'id' => $antrian->kd,
-            'timestamp' => $antrian->end_time  // ✅ NEW: Timestamp untuk deteksi panggil ulang
+            'timestamp' => $antrian->end_time,
+            'play_audio' => $playAudio  // ✅ NEW: Flag untuk play audio (0=silent, 1=play)
         ]);
     }
 

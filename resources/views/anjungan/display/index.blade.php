@@ -288,13 +288,22 @@
                     const currentKey = data.noantrian + '-' + data.loket + '-' + data.timestamp;
                     
                     if(currentKey !== lastPlayedKey) {
-                        console.log('🔊 Panggil terdeteksi:', {
-                            nomor: data.noantrian,
-                            loket: data.loket,
-                            timestamp: data.timestamp
-                        });
-                        
-                        playAntrianSequence(data.noantrian, data.loket, data.prefix.toLowerCase());
+                        // ✅ NEW: Cek flag play_audio
+                        if (data.play_audio == 1) {
+                            console.log('🔊 Panggil terdeteksi (WITH AUDIO):', {
+                                nomor: data.noantrian,
+                                loket: data.loket,
+                                timestamp: data.timestamp
+                            });
+                            
+                            playAntrianSequence(data.noantrian, data.loket, data.prefix.toLowerCase());
+                        } else {
+                            console.log('🔇 Panggil terdeteksi (SILENT MODE - no audio):', {
+                                nomor: data.noantrian,
+                                loket: data.loket,
+                                timestamp: data.timestamp
+                            });
+                        }
                         
                         // Update tracking
                         lastPlayedKey = currentKey;

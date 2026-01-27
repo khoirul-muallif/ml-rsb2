@@ -36,11 +36,10 @@ class PemanggilAntrianController extends Controller
     }
 
     /**
-     * ✅ FIXED: Universal render logic dengan proper action detection
+     * ✅ FIXED: Universal render logic
      */
     private function renderPanggil(Request $request, $type)
     {
-        // Get config dari helper
         $config = AntrianHelper::getByType($type);
         
         if (!$config) {
@@ -49,20 +48,17 @@ class PemanggilAntrianController extends Controller
         
         $currentLoket = $request->get('loket', '1');
         
-        // ✅ FIX 1: Handle form lompat antrian
+        // Handle form lompat antrian
         if ($request->has('antrian') && $request->filled('antrian')) {
-            $this->lompatAntrian($type, $request->antrian, $currentLoket);
+            $this->lompatAntrian($type, $request->antrian, $currentLoket, false);
             return redirect($request->url() . '?show=' . $config['show'] . '&loket=' . $currentLoket . '&skip_audio=1');
         }
         
-        // ✅ FIX 2: Handle tombol "Berikutnya" (HANYA jika ada action=next)
+        // ✅ Handle tombol "Berikutnya" (SILENT - tidak play audio)
         if ($request->get('action') === 'next') {
-            Log::info('🔵 Tombol BERIKUTNYA diklik', [
-                'type' => $type,
-                'loket' => $currentLoket
-            ]);
+            Log::info('🔵 BERIKUTNYA (SILENT)', ['type' => $type]);
             
-            $this->panggilAntrianBerikutnya($type, $currentLoket);
+            $this->panggilAntrianBerikutnya($type, $currentLoket, true); // silent=true
             
             return redirect($request->url() . '?show=' . $config['show'] . '&loket=' . $currentLoket . '&skip_audio=1');
         }
@@ -72,16 +68,9 @@ class PemanggilAntrianController extends Controller
         $settingLoket = MliteSetting::getSetting('anjungan', "antrian_{$fieldPrefix}", '1,2,3');
         $loketList = array_filter(array_map('trim', explode(',', $settingLoket)));
         
-        // Ambil nomor antrian terkini yang sedang dipanggil
         $nomorTerkini = $this->getNomorAntrianTerkini($type);
-        
-        // Ambil total antrian hari ini
         $totalAntrian = AntrianLoket::getNomorTerakhir($type);
-        
-        // Hitung statistik antrian hari ini
-        $hitungAntrian = AntrianLoket::where('type', $type)
-            ->hariIni()
-            ->get();
+        $hitungAntrian = AntrianLoket::where('type', $type)->hariIni()->get();
         
         return view('anjungan.pemanggil.index', [
             'config' => $config,
@@ -97,43 +86,21 @@ class PemanggilAntrianController extends Controller
     }
 
     /**
-     * ✅ DEBUG: Panggil antrian berikutnya dengan logging
+     * ✅ Panggil antrian berikutnya dengan silent mode
      */
-    private function panggilAntrianBerikutnya($type, $loket)
+    private function panggilAntrianBerikutnya($type, $loket, $silent = true)
     {
         $nomorTerkini = $this->getNomorAntrianTerkini($type);
         $nomorBerikutnya = $nomorTerkini + 1;
         
-        Log::info('🟢 Panggil Berikutnya START', [
-            'type' => $type,
-            'nomor_terkini' => $nomorTerkini,
-            'nomor_berikutnya' => $nomorBerikutnya,
-            'loket' => $loket
-        ]);
+        // ✅ Set flag play_audio
+        $fieldPrefix = $this->getFieldPrefix($type);
+        MliteSetting::setSetting('anjungan', "play_audio_{$fieldPrefix}", $silent ? '0' : '1');
         
-        // Cek apakah antrian ada
-        $antrian = AntrianLoket::where('type', $type)
-            ->where('noantrian', $nomorBerikutnya)
-            ->whereDate('postdate', today())
-            ->first();
+        Log::info($silent ? '🔇 SILENT' : '🔊 WITH AUDIO', ['nomor' => $nomorBerikutnya]);
         
-        if (!$antrian) {
-            Log::warning('🔴 Antrian TIDAK DITEMUKAN!', [
-                'type' => $type,
-                'noantrian' => $nomorBerikutnya,
-                'date' => today()->toDateString()
-            ]);
-            return;
-        }
-        
-        Log::info('🟡 Antrian ditemukan, akan di-update', [
-            'id' => $antrian->kd,
-            'old_end_time' => $antrian->end_time,
-            'old_status' => $antrian->status
-        ]);
-        
-        // Update database antrian
-        $result = AntrianLoket::where('type', $type)
+        // Update database
+        AntrianLoket::where('type', $type)
             ->where('noantrian', $nomorBerikutnya)
             ->whereDate('postdate', today())
             ->update([
@@ -142,31 +109,21 @@ class PemanggilAntrianController extends Controller
                 'status' => '1'
             ]);
         
-        Log::info('🟢 Update database result', [
-            'rows_affected' => $result,
-            'new_end_time' => now()->format('H:i:s')
-        ]);
-        
         // Update settings
-        $fieldPrefix = $this->getFieldPrefix($type);
         MliteSetting::setSetting('anjungan', "panggil_{$fieldPrefix}", $loket);
         MliteSetting::setSetting('anjungan', "panggil_{$fieldPrefix}_nomor", $nomorBerikutnya);
-        
-        Log::info('🟢 Panggil Berikutnya DONE', [
-            'final_nomor' => $nomorBerikutnya
-        ]);
     }
 
     /**
      * Lompat ke nomor antrian tertentu
      */
-    private function lompatAntrian($type, $nomor, $loket)
+    private function lompatAntrian($type, $nomor, $loket, $silent = false)
     {
-        if (!is_numeric($nomor) || $nomor < 1) {
-            return;
-        }
+        if (!is_numeric($nomor) || $nomor < 1) return;
         
-        // Update database antrian
+        $fieldPrefix = $this->getFieldPrefix($type);
+        MliteSetting::setSetting('anjungan', "play_audio_{$fieldPrefix}", $silent ? '0' : '1');
+        
         AntrianLoket::where('type', $type)
             ->where('noantrian', $nomor)
             ->whereDate('postdate', today())
@@ -176,24 +133,16 @@ class PemanggilAntrianController extends Controller
                 'status' => '1'
             ]);
         
-        // Update settings
-        $fieldPrefix = $this->getFieldPrefix($type);
         MliteSetting::setSetting('anjungan', "panggil_{$fieldPrefix}", $loket);
         MliteSetting::setSetting('anjungan', "panggil_{$fieldPrefix}_nomor", $nomor);
     }
 
-    /**
-     * Get nomor antrian terkini dari settings
-     */
     private function getNomorAntrianTerkini($type)
     {
         $fieldPrefix = $this->getFieldPrefix($type);
         return (int) MliteSetting::getSetting('anjungan', "panggil_{$fieldPrefix}_nomor", 0);
     }
 
-    /**
-     * Get field prefix untuk settings database
-     */
     private function getFieldPrefix($type)
     {
         return match($type) {
@@ -206,12 +155,10 @@ class PemanggilAntrianController extends Controller
         };
     }
 
-    // ===========================================
-    // API ENDPOINTS
-    // ===========================================
+    // ============= API =============
 
     /**
-     * API: Set panggil antrian
+     * ✅ API Set panggil (SELALU dengan audio)
      */
     public function setPanggil(Request $request)
     {
@@ -225,14 +172,14 @@ class PemanggilAntrianController extends Controller
         $noantrian = $validated['noantrian'];
         $loket = $validated['loket'] ?? '1';
         
-        Log::info('🔵 API setPanggil called', [
-            'type' => $type,
-            'noantrian' => $noantrian,
-            'loket' => $loket
-        ]);
+        Log::info('🔵 API setPanggil (WITH AUDIO)', ['type' => $type, 'nomor' => $noantrian]);
         
-        // Update status antrian
-        $result = AntrianLoket::where('type', $type)
+        // ✅ Set flag play_audio = 1 (PLAY AUDIO)
+        $fieldPrefix = $this->getFieldPrefix($type);
+        MliteSetting::setSetting('anjungan', "play_audio_{$fieldPrefix}", '1');
+        
+        // Update database
+        AntrianLoket::where('type', $type)
             ->where('noantrian', $noantrian)
             ->whereDate('postdate', today())
             ->update([
@@ -241,25 +188,13 @@ class PemanggilAntrianController extends Controller
                 'end_time' => now()->format('H:i:s')
             ]);
         
-        Log::info('🟢 API setPanggil result', [
-            'rows_affected' => $result,
-            'new_end_time' => now()->format('H:i:s')
-        ]);
-        
         // Update settings
-        $fieldPrefix = $this->getFieldPrefix($type);
         MliteSetting::setSetting('anjungan', "panggil_{$fieldPrefix}", $loket);
         MliteSetting::setSetting('anjungan', "panggil_{$fieldPrefix}_nomor", $noantrian);
         
-        return response()->json([
-            'status' => (bool)$result,
-            'message' => $result ? 'Panggil berhasil' : 'Data tidak ditemukan'
-        ]);
+        return response()->json(['status' => true, 'message' => 'Panggil berhasil']);
     }
 
-    /**
-     * API: Simpan nomor rekam medis
-     */
     public function simpanNoRM(Request $request)
     {
         $validated = $request->validate([
@@ -276,7 +211,6 @@ class PemanggilAntrianController extends Controller
             ->update(['no_rkm_medis' => $validated['no_rkm_medis']]);
         
         if ($result) {
-            // Jika Apotek, mark as completed
             if ($type === 'Apotek') {
                 AntrianLoket::where('type', $type)
                     ->where('no_rkm_medis', $validated['no_rkm_medis'])
@@ -284,43 +218,24 @@ class PemanggilAntrianController extends Controller
                     ->update(['status' => '3']);
             }
             
-            return response()->json([
-                'status' => true,
-                'message' => 'Nomor RM berhasil disimpan'
-            ]);
+            return response()->json(['status' => true, 'message' => 'Nomor RM berhasil disimpan']);
         }
         
-        return response()->json([
-            'status' => false,
-            'message' => 'Gagal menyimpan nomor RM'
-        ], 400);
+        return response()->json(['status' => false, 'message' => 'Gagal menyimpan nomor RM'], 400);
     }
 
-    /**
-     * Reset antrian untuk type tertentu
-     */
     public function resetAntrian($type)
     {
         $type = $this->normalizeType($type);
         
-        // Hapus semua antrian hari ini
-        $deleted = AntrianLoket::where('type', $type)
-            ->whereDate('postdate', today())
-            ->delete();
+        AntrianLoket::where('type', $type)->whereDate('postdate', today())->delete();
         
-        // Reset setting
         $fieldPrefix = $this->getFieldPrefix($type);
         MliteSetting::setSetting('anjungan', "panggil_{$fieldPrefix}_nomor", 0);
         
-        return response()->json([
-            'status' => true,
-            'message' => "Berhasil reset antrian {$type}"
-        ]);
+        return response()->json(['status' => true, 'message' => "Berhasil reset antrian {$type}"]);
     }
 
-    /**
-     * Normalize type dari berbagai format input
-     */
     private function normalizeType($input)
     {
         $clean = str_replace('panggil_', '', strtolower($input));
