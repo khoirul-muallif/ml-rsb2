@@ -6,6 +6,7 @@ use App\Models\AntrianLoket;
 use App\Models\MliteSetting;
 use App\Helpers\AntrianHelper;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class PemanggilAntrianController extends Controller
 {
@@ -35,7 +36,7 @@ class PemanggilAntrianController extends Controller
     }
 
     /**
-     * Universal render logic untuk semua loket
+     * ✅ FIXED: Universal render logic dengan proper action detection
      */
     private function renderPanggil(Request $request, $type)
     {
@@ -47,17 +48,23 @@ class PemanggilAntrianController extends Controller
         }
         
         $currentLoket = $request->get('loket', '1');
-        $skipAudio = $request->has('skip_audio');
         
-        // Handle form lompat antrian
+        // ✅ FIX 1: Handle form lompat antrian
         if ($request->has('antrian') && $request->filled('antrian')) {
             $this->lompatAntrian($type, $request->antrian, $currentLoket);
             return redirect($request->url() . '?show=' . $config['show'] . '&loket=' . $currentLoket . '&skip_audio=1');
         }
         
-        // Handle tombol next/forward (panggil antrian berikutnya)
-        if ($request->has('loket') && !$request->has('antrian') && !$skipAudio) {
+        // ✅ FIX 2: Handle tombol "Berikutnya" (HANYA jika ada action=next)
+        if ($request->get('action') === 'next') {
+            Log::info('🔵 Tombol BERIKUTNYA diklik', [
+                'type' => $type,
+                'loket' => $currentLoket
+            ]);
+            
             $this->panggilAntrianBerikutnya($type, $currentLoket);
+            
+            return redirect($request->url() . '?show=' . $config['show'] . '&loket=' . $currentLoket . '&skip_audio=1');
         }
         
         // Ambil setting loket dari database
@@ -76,34 +83,57 @@ class PemanggilAntrianController extends Controller
             ->hariIni()
             ->get();
         
-        // Generate audio tags untuk preload
-        $audioTags = $this->generateAudioTags($nomorTerkini, $config['prefix'], $currentLoket);
-        
         return view('anjungan.pemanggil.index', [
             'config' => $config,
             'loket' => $loketList,
             'antrian' => $nomorTerkini,
             'noantrian' => $totalAntrian,
             'hitung_antrian' => $hitungAntrian,
-            'xcounter' => $audioTags,
             'namaloket' => $config['prefix'],
             'panggil_loket' => $config['show'],
             'show' => $request->get('show'),
             'current_loket' => $currentLoket,
-            'skip_audio' => $skipAudio
         ]);
     }
 
     /**
-     * Panggil antrian berikutnya
+     * ✅ DEBUG: Panggil antrian berikutnya dengan logging
      */
     private function panggilAntrianBerikutnya($type, $loket)
     {
         $nomorTerkini = $this->getNomorAntrianTerkini($type);
         $nomorBerikutnya = $nomorTerkini + 1;
         
+        Log::info('🟢 Panggil Berikutnya START', [
+            'type' => $type,
+            'nomor_terkini' => $nomorTerkini,
+            'nomor_berikutnya' => $nomorBerikutnya,
+            'loket' => $loket
+        ]);
+        
+        // Cek apakah antrian ada
+        $antrian = AntrianLoket::where('type', $type)
+            ->where('noantrian', $nomorBerikutnya)
+            ->whereDate('postdate', today())
+            ->first();
+        
+        if (!$antrian) {
+            Log::warning('🔴 Antrian TIDAK DITEMUKAN!', [
+                'type' => $type,
+                'noantrian' => $nomorBerikutnya,
+                'date' => today()->toDateString()
+            ]);
+            return;
+        }
+        
+        Log::info('🟡 Antrian ditemukan, akan di-update', [
+            'id' => $antrian->kd,
+            'old_end_time' => $antrian->end_time,
+            'old_status' => $antrian->status
+        ]);
+        
         // Update database antrian
-        AntrianLoket::where('type', $type)
+        $result = AntrianLoket::where('type', $type)
             ->where('noantrian', $nomorBerikutnya)
             ->whereDate('postdate', today())
             ->update([
@@ -112,10 +142,19 @@ class PemanggilAntrianController extends Controller
                 'status' => '1'
             ]);
         
+        Log::info('🟢 Update database result', [
+            'rows_affected' => $result,
+            'new_end_time' => now()->format('H:i:s')
+        ]);
+        
         // Update settings
         $fieldPrefix = $this->getFieldPrefix($type);
         MliteSetting::setSetting('anjungan', "panggil_{$fieldPrefix}", $loket);
         MliteSetting::setSetting('anjungan', "panggil_{$fieldPrefix}_nomor", $nomorBerikutnya);
+        
+        Log::info('🟢 Panggil Berikutnya DONE', [
+            'final_nomor' => $nomorBerikutnya
+        ]);
     }
 
     /**
@@ -127,6 +166,17 @@ class PemanggilAntrianController extends Controller
             return;
         }
         
+        // Update database antrian
+        AntrianLoket::where('type', $type)
+            ->where('noantrian', $nomor)
+            ->whereDate('postdate', today())
+            ->update([
+                'end_time' => now()->format('H:i:s'),
+                'loket' => $loket,
+                'status' => '1'
+            ]);
+        
+        // Update settings
         $fieldPrefix = $this->getFieldPrefix($type);
         MliteSetting::setSetting('anjungan', "panggil_{$fieldPrefix}", $loket);
         MliteSetting::setSetting('anjungan', "panggil_{$fieldPrefix}_nomor", $nomor);
@@ -156,39 +206,6 @@ class PemanggilAntrianController extends Controller
         };
     }
 
-    /**
-     * Generate audio tags untuk preload
-     */
-    private function generateAudioTags($nomor, $prefix, $loket = null)
-    {
-        $tags = [];
-        $baseUrl = asset('plugins/anjungan/suara');
-        
-        // Audio untuk setiap digit nomor antrian
-        $digits = str_split((string)$nomor);
-        foreach ($digits as $i => $digit) {
-            $tags[] = '<audio id="suarabel' . $i . '" src="' . $baseUrl . '/' . $digit . '.wav" preload="auto"></audio>';
-        }
-        
-        // Audio dasar
-        $tags[] = '<audio id="suara_antrian" src="' . $baseUrl . '/antrian.wav" preload="auto"></audio>';
-        $tags[] = '<audio id="suara_loket" src="' . $baseUrl . '/counter.wav" preload="auto"></audio>';
-        
-        // Audio huruf prefix
-        $prefixLower = strtolower($prefix);
-        $tags[] = '<audio id="suara_' . $prefixLower . '" src="' . $baseUrl . '/' . $prefixLower . '.wav" preload="auto"></audio>';
-        
-        // Audio untuk digit loket
-        if ($loket) {
-            $loketDigits = str_split((string)$loket);
-            foreach ($loketDigits as $idx => $digit) {
-                $tags[] = '<audio id="suaraloket' . $idx . '" src="' . $baseUrl . '/' . $digit . '.wav" preload="auto"></audio>';
-            }
-        }
-        
-        return $tags;
-    }
-
     // ===========================================
     // API ENDPOINTS
     // ===========================================
@@ -208,6 +225,12 @@ class PemanggilAntrianController extends Controller
         $noantrian = $validated['noantrian'];
         $loket = $validated['loket'] ?? '1';
         
+        Log::info('🔵 API setPanggil called', [
+            'type' => $type,
+            'noantrian' => $noantrian,
+            'loket' => $loket
+        ]);
+        
         // Update status antrian
         $result = AntrianLoket::where('type', $type)
             ->where('noantrian', $noantrian)
@@ -217,6 +240,11 @@ class PemanggilAntrianController extends Controller
                 'loket' => $loket,
                 'end_time' => now()->format('H:i:s')
             ]);
+        
+        Log::info('🟢 API setPanggil result', [
+            'rows_affected' => $result,
+            'new_end_time' => now()->format('H:i:s')
+        ]);
         
         // Update settings
         $fieldPrefix = $this->getFieldPrefix($type);

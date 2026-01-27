@@ -109,6 +109,43 @@
             z-index: 100;
         }
 
+        /* ✅ NEW: Enable Audio Overlay */
+        #enable-audio-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.9);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+        }
+
+        #enable-audio-btn {
+            background: linear-gradient(135deg, {{ $config['color']['from'] }}, {{ $config['color']['to'] }});
+            color: #fff;
+            border: none;
+            padding: 30px 60px;
+            font-size: 28px;
+            font-weight: 700;
+            border-radius: 15px;
+            cursor: pointer;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            transition: all 0.3s ease;
+        }
+
+        #enable-audio-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.4);
+        }
+
+        #enable-audio-btn i {
+            margin-right: 15px;
+            font-size: 32px;
+        }
+
         @media (max-width: 1024px) {
             .main-container {
                 flex-direction: column;
@@ -134,6 +171,14 @@
 @endpush
 
 @section('content')
+    <!-- ✅ NEW: Enable Audio Overlay -->
+    <div id="enable-audio-overlay">
+        <button id="enable-audio-btn">
+            <i class="fa fa-volume-up"></i>
+            Klik untuk Aktifkan Audio
+        </button>
+    </div>
+
     <!-- Header -->
     <x-display-header 
         :config="$config"
@@ -210,8 +255,25 @@
 
     // ✅ FIX: Tracking dengan timestamp untuk deteksi panggil ulang
     let lastPlayedKey = null;
+    let audioEnabled = false; // ✅ NEW: Flag untuk audio enabled
+
+    // ✅ NEW: Enable audio saat user klik button
+    document.getElementById('enable-audio-btn').addEventListener('click', function() {
+        audioEnabled = true;
+        document.getElementById('enable-audio-overlay').style.display = 'none';
+        
+        // Play silent audio untuk unlock autoplay
+        const silentAudio = new Audio();
+        silentAudio.src = 'data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA';
+        silentAudio.play().then(() => {
+            console.log('✅ Audio unlocked!');
+            getAntrian(); // Start polling
+        }).catch(e => console.error('❌ Audio unlock failed:', e));
+    });
 
     function getAntrian() {
+        if (!audioEnabled) return; // ✅ Jangan polling kalau audio belum di-enable
+
         $.ajax({
             url: API_URL + '?type=' + TYPE,
             type: 'GET',
@@ -223,16 +285,13 @@
                     document.getElementById('current-counter').textContent = data.loket;
                     
                     // ✅ FIX: Gunakan timestamp untuk deteksi perubahan
-                    // Key format: "nomor-loket-timestamp"
-                    // Jadi jika petugas klik "Panggil" lagi, timestamp berubah → audio play
                     const currentKey = data.noantrian + '-' + data.loket + '-' + data.timestamp;
                     
                     if(currentKey !== lastPlayedKey) {
                         console.log('🔊 Panggil terdeteksi:', {
                             nomor: data.noantrian,
                             loket: data.loket,
-                            timestamp: data.timestamp,
-                            reason: lastPlayedKey ? 'Nomor baru atau panggil ulang' : 'Pertama kali'
+                            timestamp: data.timestamp
                         });
                         
                         playAntrianSequence(data.noantrian, data.loket, data.prefix.toLowerCase());
@@ -247,13 +306,13 @@
                     }
                 }
                 
-                // Polling lagi setelah 5 detik
-                setTimeout(getAntrian, 5000);
+                // ✅ OPTIMIZED: Polling lebih cepat (2 detik)
+                setTimeout(getAntrian, 2000);
             },
             error: function(xhr) {
                 console.error('❌ Error getting antrian:', xhr);
-                // Retry setelah 3 detik jika error
-                setTimeout(getAntrian, 3000);
+                // Retry setelah 2 detik jika error
+                setTimeout(getAntrian, 2000);
             }
         });
     }
@@ -294,13 +353,11 @@
 
     document.addEventListener('DOMContentLoaded', function() {
         console.log('📺 Display initialized for type:', TYPE);
+        console.log('⚠️ Klik tombol "Aktifkan Audio" untuk mulai');
         
-        // Start polling setelah 2 detik
-        setTimeout(getAntrian, 2000);
-        
-        // Update stats setiap 5 detik
-        setInterval(getStats, 5000);
+        // Update stats langsung (tidak perlu audio)
         getStats();
+        setInterval(getStats, 3000);
     });
     </script>
 @endpush

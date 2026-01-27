@@ -1,3 +1,4 @@
+{{-- E:\laragon\www\ml-rsb2\resources\views\components\queue-controls.blade.php --}}
 @props([
     'antrian' => 0,
     'loket' => 1,
@@ -28,7 +29,8 @@
         </button>
         
         {{-- Next Button (NO Audio, just redirect) --}}
-        <a href="{{ url('/anjungan/pemanggil?show='.$panggil_loket.'&loket='.$loket) }}" 
+        {{-- ✅ FIXED: Tambah &action=next untuk deteksi klik berikutnya --}}
+        <a href="{{ url('/anjungan/pemanggil?show='.$panggil_loket.'&loket='.$loket.'&action=next') }}" 
            class="btn btn-success"
            @if($max_antrian <= 0) 
                onclick="event.preventDefault(); alert('Belum ada antrian');"
