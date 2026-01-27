@@ -204,7 +204,7 @@
     
     <div class="display-grid">
         <!-- Display Loket Reguler -->
-        <x-dashboard-card 
+        <x-anjungan.dashboard-card 
             icon="fa-door-open"
             title="DISPLAY LOKET"
             subtitle="Monitor untuk Loket Pendaftaran Reguler"
@@ -213,7 +213,7 @@
             colorTo="#20c997" />
 
         <!-- Display Loket VIP -->
-        <x-dashboard-card 
+        <x-anjungan.dashboard-card 
             icon="fa-crown"
             title="DISPLAY LOKET VIP"
             subtitle="Monitor untuk Loket Pendaftaran VIP"
@@ -232,7 +232,7 @@
     
     <div class="display-grid">
         <!-- Display CS Reguler -->
-        <x-dashboard-card 
+        <x-anjungan.dashboard-card 
             icon="fa-headset"
             title="DISPLAY CS"
             subtitle="Monitor untuk Customer Service Reguler"
@@ -241,7 +241,7 @@
             colorTo="#0056b3" />
 
         <!-- Display CS VIP -->
-        <x-dashboard-card 
+        <x-anjungan.dashboard-card 
             icon="fa-concierge-bell"
             title="DISPLAY CS VIP"
             subtitle="Monitor untuk Customer Service VIP"
@@ -260,7 +260,7 @@
     
     <div class="display-grid">
         <!-- Display Apotek -->
-        <x-dashboard-card 
+        <x-anjungan.dashboard-card 
             icon="fa-pills"
             title="DISPLAY APOTEK"
             subtitle="Monitor untuk Apotek & Farmasi"

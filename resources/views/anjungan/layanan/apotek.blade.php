@@ -74,7 +74,7 @@
 
 @section('content')
     <!-- Header -->
-    <x-header 
+    <x-anjungan.header 
         :logo="$logo ?? null"
         :title="$nama_instansi"
         :subtitle="$alamat ?? ''"
@@ -103,7 +103,7 @@
                     $stats = $summary[$type] ?? ['total' => 0, 'menunggu' => 0, 'last_number' => 0];
                 @endphp
                 <div onclick="ambilAntrian('{{ $type }}')">
-                    <x-loket-card 
+                    <x-anjungan.loket-card 
                         :config="$config"
                         :type="$type"
                         :stats="$stats"
@@ -115,16 +115,16 @@
     </div>
 
     <!-- Running Text -->
-    <x-running-text :text="$running_text" speed="30" />
+    <x-anjungan.running-text :text="$running_text" speed="30" />
 
     <!-- Footer -->
-    <x-footer :company="$nama_instansi" powered="mLITE" />
+    <x-anjungan.footer :company="$nama_instansi" powered="mLITE" />
 
     <!-- Loading Overlay -->
-    <x-loading-overlay />
+    <x-anjungan.loading-overlay />
 
     <!-- Print Area -->
-    <x-print-area :logo="$logo ?? null" :company="$nama_instansi" :address="$alamat ?? ''" />
+    <x-anjungan.print-area :logo="$logo ?? null" :company="$nama_instansi" :address="$alamat ?? ''" />
 
 @push('scripts')
     <script src="{{ asset('js/partials/utils.js') }}"></script>

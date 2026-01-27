@@ -100,13 +100,13 @@
     <!-- Queue Panels -->
     @foreach($loket as $value)
         @if(!isset($current_loket) || $current_loket == $value)
-            <x-queue-panel 
+            <x-anjungan.queue-panel 
                 :config="$config" 
                 :loket="$value" 
                 :antrian="$antrian"
                 :panggil_loket="$panggil_loket"
                 data-queue-type="{{ $config['type'] }}">
-                <x-queue-controls 
+                <x-anjungan.queue-controls 
                     :antrian="$antrian" 
                     :loket="$value"
                     :config="$config"
@@ -117,13 +117,13 @@
     @endforeach
 
     <!-- Jump Form -->
-    <x-jump-form 
+    <x-anjungan.jump-form 
         :panggil_loket="$panggil_loket" 
         :max_antrian="$noantrian"
         :current_loket="$current_loket ?? 1" />
 
     <!-- Instructions -->
-    <x-instructions 
+    <x-anjungan.instructions 
         title="Panduan Penggunaan"
         :items="[
             ['icon' => 'fa-forward', 'title' => 'Berikutnya (→)', 'text' => 'Panggil antrian selanjutnya (tanpa audio di halaman ini)'],

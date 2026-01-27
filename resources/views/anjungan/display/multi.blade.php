@@ -59,7 +59,7 @@
 
 @section('content')
     <!-- Header -->
-    <x-header 
+    <x-anjungan.header 
         :logo="$logo ?? null"
         :title="$nama_instansi"
         :showTime="true"
@@ -89,10 +89,10 @@
     </div>
 
     <!-- Running Text -->
-    <x-running-text :text="$running_text" speed="30" />
+    <x-anjungan.running-text :text="$running_text" speed="30" />
 
     <!-- Footer -->
-    <x-footer :company="$nama_instansi" powered="mLITE" :year="true" />
+    <x-anjungan.footer :company="$nama_instansi" powered="mLITE" :year="true" />
 
 @push('scripts')
     <script src="{{ asset('js/partials/audio.js') }}"></script>

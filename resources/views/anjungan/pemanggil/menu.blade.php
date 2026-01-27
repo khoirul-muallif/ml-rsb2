@@ -113,7 +113,7 @@
     
     <div class="loket-grid">
         <!-- Loket Reguler -->
-        <x-dashboard-card 
+        <x-anjungan.dashboard-card 
             icon="fa-door-open"
             title="LOKET"
             subtitle="Loket Pendaftaran Reguler"
@@ -122,7 +122,7 @@
             colorTo="#20c997" />
 
         <!-- Loket VIP -->
-        <x-dashboard-card 
+        <x-anjungan.dashboard-card 
             icon="fa-crown"
             title="LOKET VIP"
             subtitle="Loket Pendaftaran VIP"
@@ -141,7 +141,7 @@
     
     <div class="loket-grid">
         <!-- CS Reguler -->
-        <x-dashboard-card 
+        <x-anjungan.dashboard-card 
             icon="fa-headset"
             title="CUSTOMER SERVICE"
             subtitle="Layanan Pelanggan Reguler"
@@ -150,7 +150,7 @@
             colorTo="#0056b3" />
 
         <!-- CS VIP -->
-        <x-dashboard-card 
+        <x-anjungan.dashboard-card 
             icon="fa-concierge-bell"
             title="CS VIP"
             subtitle="Layanan Pelanggan VIP"
@@ -169,7 +169,7 @@
     
     <div class="loket-grid">
         <!-- Apotek -->
-        <x-dashboard-card 
+        <x-anjungan.dashboard-card 
             icon="fa-pills"
             title="APOTEK"
             subtitle="Farmasi & Obat-Obatan"

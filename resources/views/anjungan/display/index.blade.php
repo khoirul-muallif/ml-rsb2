@@ -180,7 +180,7 @@
     </div>
 
     <!-- Header -->
-    <x-display-header 
+    <x-anjungan.display-header 
         :config="$config"
         :logo="$logo ?? null"
         :company="$nama_instansi"
@@ -208,7 +208,7 @@
         <!-- Queue Display & Stats -->
         <div class="queue-section">
             <!-- Queue Display -->
-            <x-queue-display :config="$config" />
+            <x-anjungan.queue-display :config="$config" />
 
             <!-- Stats Section -->
             <div class="stats-section">
@@ -236,12 +236,12 @@
 
     <!-- Running Text -->
     <div class="running-text-wrapper">
-        <x-running-text :text="$running_text" speed="30" />
+        <x-anjungan.running-text :text="$running_text" speed="30" />
     </div>
 
     <!-- Footer -->
     <div class="footer-wrapper">
-        <x-footer :company="$nama_instansi" powered="mLITE" :year="true" />
+        <x-anjungan.footer :company="$nama_instansi" powered="mLITE" :year="true" />
     </div>
 
 @push('scripts')

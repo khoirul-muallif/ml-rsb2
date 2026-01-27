@@ -70,7 +70,7 @@
     
     <div class="loket-grid">
         <!-- Menu Anjungan Pasien -->
-        <x-dashboard-card 
+        <x-anjungan.dashboard-card 
             icon="fa-ticket-alt"
             title="ANJUNGAN PASIEN"
             subtitle="Ambil Nomor Antrian (Loket, CS, Apotek)"
@@ -88,7 +88,7 @@
     
     <div class="loket-grid">
         <!-- Menu Pemanggil -->
-        <x-dashboard-card 
+        <x-anjungan.dashboard-card 
             icon="fa-bullhorn"
             title="PANEL PEMANGGIL"
             subtitle="Pemanggil Antrian untuk Petugas (Loket, CS, Apotek)"
@@ -106,7 +106,7 @@
     
     <div class="loket-grid">
         <!-- Menu Display -->
-        <x-dashboard-card 
+        <x-anjungan.dashboard-card 
             icon="fa-tv"
             title="MONITOR DISPLAY"
             subtitle="Tampilan untuk TV / Monitor Ruang Tunggu (Semua Loket)"
