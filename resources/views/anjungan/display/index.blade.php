@@ -109,43 +109,6 @@
             z-index: 100;
         }
 
-        /* ✅ NEW: Enable Audio Overlay */
-        #enable-audio-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0,0,0,0.9);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 9999;
-        }
-
-        #enable-audio-btn {
-            background: linear-gradient(135deg, {{ $config['color']['from'] }}, {{ $config['color']['to'] }});
-            color: #fff;
-            border: none;
-            padding: 30px 60px;
-            font-size: 28px;
-            font-weight: 700;
-            border-radius: 15px;
-            cursor: pointer;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-            transition: all 0.3s ease;
-        }
-
-        #enable-audio-btn:hover {
-            transform: scale(1.05);
-            box-shadow: 0 15px 40px rgba(0,0,0,0.4);
-        }
-
-        #enable-audio-btn i {
-            margin-right: 15px;
-            font-size: 32px;
-        }
-
         @media (max-width: 1024px) {
             .main-container {
                 flex-direction: column;
@@ -171,14 +134,6 @@
 @endpush
 
 @section('content')
-    <!-- ✅ NEW: Enable Audio Overlay -->
-    <div id="enable-audio-overlay">
-        <button id="enable-audio-btn">
-            <i class="fa fa-volume-up"></i>
-            Klik untuk Aktifkan Audio
-        </button>
-    </div>
-
     <!-- Header -->
     <x-anjungan.display-header 
         :config="$config"
@@ -253,27 +208,108 @@
     const TYPE = '{{ $config["type"] }}';
     const CSRF_TOKEN = '{{ csrf_token() }}';
 
-    // ✅ FIX: Tracking dengan timestamp untuk deteksi panggil ulang
+    // ✅ Tracking dengan timestamp untuk deteksi panggil ulang
     let lastPlayedKey = null;
-    let audioEnabled = false; // ✅ NEW: Flag untuk audio enabled
+    let audioUnlocked = false; // ✅ Flag untuk audio unlocked
 
-    // ✅ NEW: Enable audio saat user klik button
-    document.getElementById('enable-audio-btn').addEventListener('click', function() {
-        audioEnabled = true;
-        document.getElementById('enable-audio-overlay').style.display = 'none';
+    /**
+     * ✅ IMPROVED: Auto-unlock audio dengan multiple strategies
+     */
+    function autoUnlockAudio() {
+        console.log('🔓 Attempting to unlock audio...');
         
-        // Play silent audio untuk unlock autoplay
-        const silentAudio = new Audio();
-        silentAudio.src = 'data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA';
-        silentAudio.play().then(() => {
-            console.log('✅ Audio unlocked!');
-            getAntrian(); // Start polling
-        }).catch(e => console.error('❌ Audio unlock failed:', e));
-    });
+        // Strategy 1: Try immediate unlock dengan muted audio
+        const unlockAudio = new Audio();
+        unlockAudio.src = 'data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA';
+        unlockAudio.volume = 0.01; // Almost muted
+        
+        const tryUnlock = () => {
+            return unlockAudio.play()
+                .then(() => {
+                    console.log('✅ Audio unlocked successfully!');
+                    audioUnlocked = true;
+                    unlockAudio.pause();
+                    unlockAudio.currentTime = 0;
+                    return true;
+                })
+                .catch(e => {
+                    console.warn('⚠️ Unlock attempt failed:', e.name);
+                    return false;
+                });
+        };
+        
+        // Try unlock immediately
+        tryUnlock().then(success => {
+            if (success) {
+                // Sukses! Langsung start
+                getAntrian();
+            } else {
+                console.log('⏳ Waiting for user interaction...');
+                
+                // Strategy 2: Unlock on ANY interaction (click, touch, key press)
+                const unlockEvents = ['click', 'touchstart', 'keydown', 'mousemove'];
+                
+                const unlockHandler = () => {
+                    console.log('👆 User interaction detected, unlocking...');
+                    tryUnlock().then(success => {
+                        if (success) {
+                            getAntrian();
+                            // Remove all listeners
+                            unlockEvents.forEach(event => {
+                                document.removeEventListener(event, unlockHandler);
+                            });
+                        }
+                    });
+                };
+                
+                // Attach to all interaction events
+                unlockEvents.forEach(event => {
+                    document.addEventListener(event, unlockHandler, { once: true, passive: true });
+                });
+                
+                // Strategy 3: Show subtle hint (optional)
+                showAudioHint();
+            }
+        });
+    }
+    
+    /**
+     * ✅ NEW: Show subtle hint jika audio belum unlock
+     */
+    function showAudioHint() {
+        const hint = document.createElement('div');
+        hint.id = 'audio-hint';
+        hint.style.cssText = `
+            position: fixed;
+            bottom: 120px;
+            right: 30px;
+            background: rgba(0,0,0,0.8);
+            color: white;
+            padding: 15px 20px;
+            border-radius: 10px;
+            font-size: 14px;
+            z-index: 9998;
+            animation: fadeInOut 3s ease-in-out;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        `;
+        hint.innerHTML = '<i class="fa fa-volume-up"></i> Klik di mana saja untuk aktifkan audio';
+        
+        // Add animation
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes fadeInOut {
+                0%, 100% { opacity: 0; }
+                10%, 90% { opacity: 1; }
+            }
+        `;
+        document.head.appendChild(style);
+        document.body.appendChild(hint);
+        
+        // Auto-remove after 3 seconds
+        setTimeout(() => hint.remove(), 3000);
+    }
 
     function getAntrian() {
-        if (!audioEnabled) return; // ✅ Jangan polling kalau audio belum di-enable
-
         $.ajax({
             url: API_URL + '?type=' + TYPE,
             type: 'GET',
@@ -284,11 +320,11 @@
                     document.getElementById('current-number').textContent = data.noantrian;
                     document.getElementById('current-counter').textContent = data.loket;
                     
-                    // ✅ FIX: Gunakan timestamp untuk deteksi perubahan
+                    // ✅ Gunakan timestamp untuk deteksi perubahan
                     const currentKey = data.noantrian + '-' + data.loket + '-' + data.timestamp;
                     
                     if(currentKey !== lastPlayedKey) {
-                        // ✅ NEW: Cek flag play_audio
+                        // ✅ Cek flag play_audio
                         if (data.play_audio == 1) {
                             console.log('🔊 Panggil terdeteksi (WITH AUDIO):', {
                                 nomor: data.noantrian,
@@ -296,6 +332,7 @@
                                 timestamp: data.timestamp
                             });
                             
+                            // ✅ Play audio (unmuted)
                             playAntrianSequence(data.noantrian, data.loket, data.prefix.toLowerCase());
                         } else {
                             console.log('🔇 Panggil terdeteksi (SILENT MODE - no audio):', {
@@ -315,12 +352,11 @@
                     }
                 }
                 
-                // ✅ OPTIMIZED: Polling lebih cepat (2 detik)
+                // ✅ Polling setiap 2 detik
                 setTimeout(getAntrian, 2000);
             },
             error: function(xhr) {
                 console.error('❌ Error getting antrian:', xhr);
-                // Retry setelah 2 detik jika error
                 setTimeout(getAntrian, 2000);
             }
         });
@@ -362,9 +398,12 @@
 
     document.addEventListener('DOMContentLoaded', function() {
         console.log('📺 Display initialized for type:', TYPE);
-        console.log('⚠️ Klik tombol "Aktifkan Audio" untuk mulai');
+        console.log('🔓 Auto-unlocking audio...');
         
-        // Update stats langsung (tidak perlu audio)
+        // ✅ Auto-unlock audio saat load
+        autoUnlockAudio();
+        
+        // Update stats langsung
         getStats();
         setInterval(getStats, 3000);
     });

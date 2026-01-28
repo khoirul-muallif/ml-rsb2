@@ -1,9 +1,9 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\PemanggilAntrianController;
-use App\Http\Controllers\DisplayAntrianController;
-use App\Http\Controllers\AntrianLoketController;
+use App\Http\Controllers\Anjungan\PemanggilAntrianController;
+use App\Http\Controllers\Anjungan\DisplayAntrianController;
+use App\Http\Controllers\Anjungan\AntrianLoketController;
 
 Route::get('/', function () {
     return view('welcome');

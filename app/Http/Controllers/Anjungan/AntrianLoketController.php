@@ -1,7 +1,8 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Anjungan;
 
+use App\Http\Controllers\Controller;
 use App\Models\AntrianLoket;
 use App\Models\MliteSetting;
 use App\Helpers\AntrianHelper;
@@ -12,7 +13,75 @@ use Carbon\Carbon;
 class AntrianLoketController extends Controller
 {
     /**
-     * Halaman anjungan pasien
+     * Halaman menu utama - pilih grup layanan
+     */
+    public function menu()
+    {
+        $logo = MliteSetting::getSetting('settings', 'logo', 'logo.png');
+        $namaInstansi = MliteSetting::getSetting('settings', 'nama_instansi', 'Rumah Sakit');
+        $alamat = MliteSetting::getSetting('settings', 'alamat', '');
+        $runningText = MliteSetting::getSetting('anjungan', 'text_anjungan', 'Selamat datang');
+        
+        return view('anjungan.layanan.menu', [
+            'logo' => $logo,
+            'nama_instansi' => $namaInstansi,
+            'alamat' => $alamat,
+            'running_text' => $runningText
+        ]);
+    }
+
+    /**
+     * Halaman Loket Pendaftaran (Loket & LoketVIP)
+     */
+    public function loket()
+    {
+        return $this->showGroup(['Loket', 'LoketVIP'], 'anjungan.layanan.loket');
+    }
+
+    /**
+     * Halaman Customer Service (CS & CSVIP)
+     */
+    public function cs()
+    {
+        return $this->showGroup(['CS', 'CSVIP'], 'anjungan.layanan.cs');
+    }
+
+    /**
+     * Halaman Apotek & Farmasi
+     */
+    public function apotek()
+    {
+        return $this->showGroup(['Apotek'], 'anjungan.layanan.apotek');
+    }
+
+    /**
+     * Helper: Show specific group
+     */
+    private function showGroup(array $types, string $view)
+    {
+        $logo = MliteSetting::getSetting('settings', 'logo', 'logo.png');
+        $namaInstansi = MliteSetting::getSetting('settings', 'nama_instansi', 'Rumah Sakit');
+        $alamat = MliteSetting::getSetting('settings', 'alamat', '');
+        $runningText = MliteSetting::getSetting('anjungan', 'text_anjungan', 'Selamat datang');
+        
+        $loketTypes = AntrianHelper::getAllSorted();
+        
+        $today = now()->toDateString();
+        $summary = $this->getSummary($today);
+        
+        return view($view, [
+            'logo' => $logo,
+            'nama_instansi' => $namaInstansi,
+            'alamat' => $alamat,
+            'running_text' => $runningText,
+            'loket_types' => $loketTypes,
+            'summary' => $summary
+        ]);
+    }
+
+    /**
+     * Halaman anjungan pasien (DEPRECATED - use menu() instead)
+     * Kept for backward compatibility
      */
     public function index()
     {
@@ -57,18 +126,18 @@ class AntrianLoketController extends Controller
             // ✅ PENTING: Filter by postdate = today ONLY
             $total = DB::table('mlite_antrian_loket')
                 ->where('type', $type)
-                ->where('postdate', $date)  // ✅ Only today
+                ->where('postdate', $date)
                 ->count();
             
             $menunggu = DB::table('mlite_antrian_loket')
                 ->where('type', $type)
-                ->where('postdate', $date)  // ✅ Only today
+                ->where('postdate', $date)
                 ->where('status', '0')
                 ->count();
             
             $lastNumber = DB::table('mlite_antrian_loket')
                 ->where('type', $type)
-                ->where('postdate', $date)  // ✅ Only today
+                ->where('postdate', $date)
                 ->orderByDesc('noantrian')
                 ->value('noantrian') ?? 0;
             
@@ -110,7 +179,7 @@ class AntrianLoketController extends Controller
             // ✅ PENTING: Hanya ambil last number dari hari INI
             $lastNumber = DB::table('mlite_antrian_loket')
                 ->where('type', $type)
-                ->where('postdate', $today)  // ✅ Only today!
+                ->where('postdate', $today)
                 ->orderByDesc('noantrian')
                 ->value('noantrian');
 
@@ -121,7 +190,7 @@ class AntrianLoketController extends Controller
             $id = DB::table('mlite_antrian_loket')->insertGetId([
                 'type' => $type,
                 'noantrian' => $nextNumber,
-                'postdate' => $today,  // ✅ Set postdate hari ini
+                'postdate' => $today,
                 'status' => '0',
                 'category' => $config['category'] ?? 'reguler',
                 'loket' => '0',
@@ -258,7 +327,7 @@ class AntrianLoketController extends Controller
             $antrian = DB::table('mlite_antrian_loket')
                 ->where('type', $config['type'])
                 ->where('noantrian', $nomor)
-                ->where('postdate', $today)  // ✅ Only today!
+                ->where('postdate', $today)
                 ->first();
             
             if (!$antrian) {
@@ -271,7 +340,7 @@ class AntrianLoketController extends Controller
             // Hitung posisi
             $posisi = DB::table('mlite_antrian_loket')
                 ->where('type', $config['type'])
-                ->where('postdate', $today)  // ✅ Only today!
+                ->where('postdate', $today)
                 ->where('noantrian', '<', $nomor)
                 ->where('status', '0')
                 ->count() + 1;

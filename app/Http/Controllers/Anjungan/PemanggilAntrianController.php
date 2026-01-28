@@ -1,7 +1,8 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Anjungan;
 
+use App\Http\Controllers\Controller;
 use App\Models\AntrianLoket;
 use App\Models\MliteSetting;
 use App\Helpers\AntrianHelper;
@@ -50,7 +51,7 @@ class PemanggilAntrianController extends Controller
         
         // Handle form lompat antrian
         if ($request->has('antrian') && $request->filled('antrian')) {
-            $this->lompatAntrian($type, $request->antrian, $currentLoket, false);
+            $this->lompatAntrian($type, $request->antrian, $currentLoket);
             return redirect($request->url() . '?show=' . $config['show'] . '&loket=' . $currentLoket . '&skip_audio=1');
         }
         
@@ -115,14 +116,17 @@ class PemanggilAntrianController extends Controller
     }
 
     /**
-     * Lompat ke nomor antrian tertentu
+     * Lompat ke nomor antrian tertentu (ALWAYS SILENT - no audio)
      */
-    private function lompatAntrian($type, $nomor, $loket, $silent = false)
+    private function lompatAntrian($type, $nomor, $loket, $silent = true)
     {
         if (!is_numeric($nomor) || $nomor < 1) return;
         
         $fieldPrefix = $this->getFieldPrefix($type);
-        MliteSetting::setSetting('anjungan', "play_audio_{$fieldPrefix}", $silent ? '0' : '1');
+        // ✅ ALWAYS SILENT untuk lompat (play_audio = 0)
+        MliteSetting::setSetting('anjungan', "play_audio_{$fieldPrefix}", '0');
+        
+        Log::info('🔇 Lompat antrian (SILENT)', ['nomor' => $nomor]);
         
         AntrianLoket::where('type', $type)
             ->where('noantrian', $nomor)

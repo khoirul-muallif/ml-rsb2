@@ -1,7 +1,8 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Anjungan;
 
+use App\Http\Controllers\Controller;
 use App\Models\AntrianLoket;
 use App\Models\MliteSetting;
 use App\Helpers\AntrianHelper;
