@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\Cache;
 class MliteSetting extends Model
 {
     public $timestamps = false;
-    protected $table = 'mlite_settings';
+    protected $table = 'ml_settings';
     protected $primaryKey = 'id';
     
     protected $fillable = ['module', 'field', 'value'];
@@ -61,7 +61,7 @@ class MliteSetting extends Model
      */
     public static function getModuleSettings($module)
     {
-        $cacheKey = "mlite_settings_module_{$module}";
+        $cacheKey = "ml_settings_module_{$module}";
         
         return Cache::remember($cacheKey, 3600, function() use ($module) {
             return self::where('module', $module)

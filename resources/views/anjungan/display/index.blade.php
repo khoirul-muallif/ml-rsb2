@@ -353,11 +353,11 @@
                 }
                 
                 // ✅ Polling setiap 2 detik
-                setTimeout(getAntrian, 2000);
+                setTimeout(getAntrian, 4000);
             },
             error: function(xhr) {
                 console.error('❌ Error getting antrian:', xhr);
-                setTimeout(getAntrian, 2000);
+                setTimeout(getAntrian, 4000);
             }
         });
     }

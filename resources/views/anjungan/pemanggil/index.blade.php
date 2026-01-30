@@ -210,7 +210,7 @@
                     icon: 'success',
                     title: 'Berhasil!',
                     html: `Antrian <strong>{{ $config["prefix"] }}${noantrian}</strong> sudah dipanggil ke Loket ${CURRENT_LOKET}`,
-                    timer: 2000,
+                    timer: 4000,
                     showConfirmButton: false,
                     toast: true,
                     position: 'top-end'

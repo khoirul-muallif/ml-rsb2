@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('mlite_antrian_loket', function (Blueprint $table) {
+        Schema::create('ml_antrian_loket', function (Blueprint $table) {
             $table->id('kd');
             $table->string('type', 50)->comment('Loket, CS, Apotek, IGD');
             $table->string('noantrian', 50)->comment('Nomor urut antrian');
@@ -32,6 +32,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('mlite_antrian_loket');
+        Schema::dropIfExists('ml_antrian_loket');
     }
 };

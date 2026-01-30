@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class AntrianLoket extends Model
 {
     public $timestamps = false;
-    protected $table = 'mlite_antrian_loket';
+    protected $table = 'ml_antrian_loket';
     protected $primaryKey = 'kd';
 
     protected $fillable = [

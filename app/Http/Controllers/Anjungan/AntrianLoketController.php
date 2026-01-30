@@ -124,18 +124,18 @@ class AntrianLoketController extends Controller
             if (!$config) continue;
             
             // ✅ PENTING: Filter by postdate = today ONLY
-            $total = DB::table('mlite_antrian_loket')
+            $total = DB::table('ml_antrian_loket')
                 ->where('type', $type)
                 ->where('postdate', $date)
                 ->count();
             
-            $menunggu = DB::table('mlite_antrian_loket')
+            $menunggu = DB::table('ml_antrian_loket')
                 ->where('type', $type)
                 ->where('postdate', $date)
                 ->where('status', '0')
                 ->count();
             
-            $lastNumber = DB::table('mlite_antrian_loket')
+            $lastNumber = DB::table('ml_antrian_loket')
                 ->where('type', $type)
                 ->where('postdate', $date)
                 ->orderByDesc('noantrian')
@@ -177,7 +177,7 @@ class AntrianLoketController extends Controller
             }
 
             // ✅ PENTING: Hanya ambil last number dari hari INI
-            $lastNumber = DB::table('mlite_antrian_loket')
+            $lastNumber = DB::table('ml_antrian_loket')
                 ->where('type', $type)
                 ->where('postdate', $today)
                 ->orderByDesc('noantrian')
@@ -187,7 +187,7 @@ class AntrianLoketController extends Controller
             $nextNumber = $lastNumber ? (int)$lastNumber + 1 : 1;
 
             // Insert antrian baru
-            $id = DB::table('mlite_antrian_loket')->insertGetId([
+            $id = DB::table('ml_antrian_loket')->insertGetId([
                 'type' => $type,
                 'noantrian' => $nextNumber,
                 'postdate' => $today,
@@ -252,7 +252,7 @@ class AntrianLoketController extends Controller
     public function info($id)
     {
         try {
-            $antrian = DB::table('mlite_antrian_loket')
+            $antrian = DB::table('ml_antrian_loket')
                 ->where('kd', $id)
                 ->first();
 
@@ -324,7 +324,7 @@ class AntrianLoketController extends Controller
             }
             
             // ✅ PENTING: Cek hanya dari hari ini
-            $antrian = DB::table('mlite_antrian_loket')
+            $antrian = DB::table('ml_antrian_loket')
                 ->where('type', $config['type'])
                 ->where('noantrian', $nomor)
                 ->where('postdate', $today)
@@ -338,7 +338,7 @@ class AntrianLoketController extends Controller
             }
             
             // Hitung posisi
-            $posisi = DB::table('mlite_antrian_loket')
+            $posisi = DB::table('ml_antrian_loket')
                 ->where('type', $config['type'])
                 ->where('postdate', $today)
                 ->where('noantrian', '<', $nomor)

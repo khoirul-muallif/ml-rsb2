@@ -49,7 +49,7 @@ class AntrianVIPSettingsSeeder extends Seeder
         ];
 
         foreach ($settings as $setting) {
-            DB::table('mlite_settings')->updateOrInsert(
+            DB::table('ml_settings')->updateOrInsert(
                 [
                     'module' => $setting['module'],
                     'field' => $setting['field']

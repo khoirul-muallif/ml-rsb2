@@ -11,11 +11,11 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('mlite_antrian_loket', function (Blueprint $table) {
+        Schema::table('ml_antrian_loket', function (Blueprint $table) {
             // Cek apakah kolom 'category' sudah ada
-            if (!Schema::hasColumn('mlite_antrian_loket', 'category')) {
+            if (!Schema::hasColumn('ml_antrian_loket', 'category')) {
                 $table->string('category', 20)->default('reguler')->after('loket')->comment('reguler atau vip');
-                $table->index('category', 'mlite_antrian_loket_category_index');
+                $table->index('category', 'ml_antrian_loket_category_index');
                 $table->index(['category', 'postdate'], 'idx_category_date');
             }
         });
@@ -26,9 +26,9 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('mlite_antrian_loket', function (Blueprint $table) {
-            if (Schema::hasColumn('mlite_antrian_loket', 'category')) {
-                $table->dropIndex('mlite_antrian_loket_category_index');
+        Schema::table('ml_antrian_loket', function (Blueprint $table) {
+            if (Schema::hasColumn('ml_antrian_loket', 'category')) {
+                $table->dropIndex('ml_antrian_loket_category_index');
                 $table->dropIndex('idx_category_date');
                 $table->dropColumn('category');
             }

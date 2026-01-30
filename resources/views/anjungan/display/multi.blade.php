@@ -158,7 +158,7 @@
         console.log('📺 Multi-display initialized');
         
         // First poll after 2 seconds
-        setTimeout(pollAllDisplays, 2000);
+        setTimeout(pollAllDisplays, 4000);
         
         // Then poll every 5 seconds
         setInterval(pollAllDisplays, 5000);

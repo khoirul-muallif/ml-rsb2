@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('mlite_settings', function (Blueprint $table) {
+        Schema::create('ml_settings', function (Blueprint $table) {
             $table->id();
             $table->text('module')->nullable()->comment('settings, anjungan, api, website, jkn_mobile, dll');
             $table->text('field')->nullable()->comment('key/field name');
@@ -28,6 +28,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('mlite_settings');
+        Schema::dropIfExists('ml_settings');
     }
 };

@@ -78,12 +78,12 @@
 
 @section('content')
     <!-- Header -->
-    <x-anjungan.header 
+    {{-- <x-anjungan.header 
         :logo="$logo ?? null"
         :title="$nama_instansi"
         :subtitle="$alamat ?? ''"
         :showTime="false"
-    />
+    /> --}}
 
     <!-- Main Container -->
     <div class="main-container">
@@ -119,10 +119,10 @@
     </div>
 
     <!-- Running Text -->
-    <x-anjungan.running-text :text="$running_text" speed="30" />
+    {{-- <x-anjungan.running-text :text="$running_text" speed="30" />
 
     <!-- Footer -->
-    <x-anjungan.footer :company="$nama_instansi" powered="mLITE" />
+    <x-anjungan.footer :company="$nama_instansi" powered="mLITE" /> --}}
 
     <!-- Loading Overlay -->
     <x-anjungan.loading-overlay />

@@ -7,9 +7,9 @@
 ])
 
 <div class="loket-card" style="--color-from: {{ $config['color']['from'] }}; --color-to: {{ $config['color']['to'] }};">
-    @if(isset($config['badge']))
+    {{-- @if(isset($config['badge']))
         <div class="loket-badge">{{ $config['badge'] }}</div>
-    @endif
+    @endif --}}
     
     <div class="loket-icon">
         <i class="fa {{ $config['icon'] }}"></i>
@@ -28,7 +28,7 @@
     </div>
     
     <!-- Stats -->
-    <div class="loket-stats">
+    {{-- <div class="loket-stats">
         <div class="stat-item">
             <div class="stat-number" id="total-{{ $type }}">{{ $stats['total'] ?? 0 }}</div>
             <div class="stat-label">Total Hari Ini</div>
@@ -37,7 +37,7 @@
             <div class="stat-number" id="menunggu-{{ $type }}">{{ $stats['menunggu'] ?? 0 }}</div>
             <div class="stat-label">Menunggu</div>
         </div>
-    </div>
+    </div> --}}
 </div>
 
 <style>
