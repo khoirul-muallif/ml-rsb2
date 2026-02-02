@@ -172,6 +172,11 @@
                         <span class="stat-number" id="stat-total">0</span>
                         <div class="stat-label">Total Antrian</div>
                     </div>
+                    <div class="stat-item">
+                        <span class="stat-number" id="stat-diproses">0</span>
+                        {{-- <div class="stat-label">Diproses</div> --}}
+                        <div class="stat-label">Selesai</div>
+                    </div>
                     {{-- <div class="stat-item">
                         <span class="stat-number" id="stat-selesai">0</span>
                         <div class="stat-label">Selesai</div>
@@ -180,11 +185,7 @@
                         <span class="stat-number" id="stat-menunggu">0</span>
                         <div class="stat-label">Menunggu</div>
                     </div> --}}
-                    <div class="stat-item">
-                        <span class="stat-number" id="stat-diproses">0</span>
-                        {{-- <div class="stat-label">Diproses</div> --}}
-                        <div class="stat-label">Selesai</div>
-                    </div>
+                    
                 </div>
             </div>
         </div>
@@ -371,8 +372,8 @@
             success: function(data) {
                 if(data.status && data.stats) {
                     document.getElementById('stat-total').textContent = data.stats.total || '0';
-                    document.getElementById('stat-selesai').textContent = data.stats.selesai || '0';
-                    document.getElementById('stat-menunggu').textContent = data.stats.menunggu || '0';
+                    // document.getElementById('stat-selesai').textContent = data.stats.selesai || '0';
+                    // document.getElementById('stat-menunggu').textContent = data.stats.menunggu || '0';
                     document.getElementById('stat-diproses').textContent = data.stats.diproses || '0';
                 }
             },

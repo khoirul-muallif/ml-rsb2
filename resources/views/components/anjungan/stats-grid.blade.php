@@ -9,18 +9,18 @@
             </span>
             <div class="stat-label">Total Antrian</div>
         </div>
-        <div class="stat-item">
+        {{-- <div class="stat-item">
             <span class="stat-number" style="color: {{ $config['color']['from'] }}">
                 {{ $stats['selesai'] ?? 0 }}
             </span>
             <div class="stat-label">Selesai</div>
-        </div>
-        <div class="stat-item">
+        </div> --}}
+        {{-- <div class="stat-item">
             <span class="stat-number" style="color: {{ $config['color']['from'] }}">
                 {{ $stats['menunggu'] ?? 0 }}
             </span>
             <div class="stat-label">Menunggu</div>
-        </div>
+        </div> --}}
         <div class="stat-item">
             <span class="stat-number" style="color: {{ $config['color']['from'] }}">
                 {{ $stats['diproses'] ?? 0 }}
