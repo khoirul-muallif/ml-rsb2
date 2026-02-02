@@ -23,7 +23,7 @@ class MliteSetting extends Model
      */
     public static function getSetting($module, $field, $default = null)
     {
-        $cacheKey = "mlite_setting_{$module}_{$field}";
+        $cacheKey = "ml_setting_{$module}_{$field}";
         
         return Cache::remember($cacheKey, 3600, function() use ($module, $field, $default) {
             $setting = self::where('module', $module)
@@ -44,7 +44,7 @@ class MliteSetting extends Model
      */
     public static function setSetting($module, $field, $value)
     {
-        $cacheKey = "mlite_setting_{$module}_{$field}";
+        $cacheKey = "ml_setting_{$module}_{$field}";
         Cache::forget($cacheKey);
         
         return self::updateOrCreate(

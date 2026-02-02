@@ -33,7 +33,7 @@ class DisplayAntrianController extends Controller
         // Common data
         $logo = MliteSetting::getSetting('settings', 'logo', 'logo.png');
         $videoId = MliteSetting::getSetting('anjungan', 'vidio', '');
-        $runningText = MliteSetting::getSetting('anjungan', 'text_loket', 'Selamat datang di sistem antrian kami');
+        $runningText = MliteSetting::getSetting('anjungan', 'text_anjungan', 'Selamat datang di sistem antrian kami');
         $namaInstansi = MliteSetting::getSetting('settings', 'nama_instansi', 'Rumah Sakit');
         $tanggal = $this->getTanggalIndonesia();
         

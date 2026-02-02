@@ -172,17 +172,18 @@
                         <span class="stat-number" id="stat-total">0</span>
                         <div class="stat-label">Total Antrian</div>
                     </div>
-                    <div class="stat-item">
+                    {{-- <div class="stat-item">
                         <span class="stat-number" id="stat-selesai">0</span>
                         <div class="stat-label">Selesai</div>
                     </div>
                     <div class="stat-item">
                         <span class="stat-number" id="stat-menunggu">0</span>
                         <div class="stat-label">Menunggu</div>
-                    </div>
+                    </div> --}}
                     <div class="stat-item">
                         <span class="stat-number" id="stat-diproses">0</span>
-                        <div class="stat-label">Diproses</div>
+                        {{-- <div class="stat-label">Diproses</div> --}}
+                        <div class="stat-label">Selesai</div>
                     </div>
                 </div>
             </div>

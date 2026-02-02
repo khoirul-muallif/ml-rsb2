@@ -19,11 +19,11 @@
         <!-- Additional links if needed -->
     </div>
 
-    <div class="footer-right">
+    {{-- <div class="footer-right">
         @if($powered)
-            Powered by <a href="https://github.com/basoro/mlite" target="_blank" style="color: inherit; text-decoration: underline;">{{ $powered }}</a>
+             by <a href="#" target="_blank" style="color: inherit; text-decoration: underline;">{{ $powered }}</a>
         @endif
-    </div>
+    </div> --}}
 </footer>
 
 <style>

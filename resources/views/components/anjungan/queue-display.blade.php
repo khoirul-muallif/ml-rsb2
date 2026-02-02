@@ -28,7 +28,7 @@
     padding: 40px;
     box-shadow: 0 10px 40px rgba(0,0,0,0.3);
     text-align: center;
-    flex: 1;
+    /* flex: 1; */
     display: flex;
     flex-direction: column;
     justify-content: center;
