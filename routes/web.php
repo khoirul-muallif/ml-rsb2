@@ -150,8 +150,8 @@ Route::prefix('anjungan')->name('anjungan.')->group(function () {
          * Simpan nomor rekam medis
          * POST /anjungan/api/simpannorm
          */
-        Route::post('/simpannorm', [PemanggilAntrianController::class, 'simpanNoRM'])
-            ->name('simpannorm');
+        // Route::post('/simpannorm', [PemanggilAntrianController::class, 'simpanNoRM'])
+        //     ->name('simpannorm');
         
         /**
          * Reset antrian untuk type tertentu
