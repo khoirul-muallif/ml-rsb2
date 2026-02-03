@@ -3,6 +3,10 @@
 /**
  * Convert number to Indonesian audio sequence
  */
+/**
+ * Convert number to Indonesian audio sequence
+ * ✅ FIXED: Hapus ELSE IF di ratusan
+ */
 function convertToIndonesianAudio(number, playlist, baseUrl) {
     var num = parseInt(number);
     
@@ -11,18 +15,31 @@ function convertToIndonesianAudio(number, playlist, baseUrl) {
         return;
     }
     
-    // Ratusan
-    if(num >= 200) {
+    // ✅ Ribuan (1000-9999)
+    if(num >= 1000) {
+        var ribuan = Math.floor(num / 1000);
+        if(ribuan == 1) {
+            playlist.push(baseUrl + '/seribu.wav');
+        } else {
+            playlist.push(baseUrl + '/' + ribuan + '.wav');
+            playlist.push(baseUrl + '/ribu.wav');
+        }
+        num = num % 1000;
+    }
+    
+    // ✅ HAPUS ELSE - Ratusan (100-999)
+    if(num >= 100) {  // ← Ubah dari 'else if' jadi 'if'
         var ratusan = Math.floor(num / 100);
-        playlist.push(baseUrl + '/' + ratusan + '.wav');
-        playlist.push(baseUrl + '/ratus.wav');
-        num = num % 100;
-    } else if(num >= 100) {
-        playlist.push(baseUrl + '/seratus.wav');
+        if(ratusan == 1) {
+            playlist.push(baseUrl + '/seratus.wav');
+        } else {
+            playlist.push(baseUrl + '/' + ratusan + '.wav');
+            playlist.push(baseUrl + '/ratus.wav');
+        }
         num = num % 100;
     }
     
-    // Puluhan
+    // Puluhan (10-99)
     if(num >= 20) {
         var puluhan = Math.floor(num / 10);
         playlist.push(baseUrl + '/' + puluhan + '.wav');
@@ -47,7 +64,6 @@ function convertToIndonesianAudio(number, playlist, baseUrl) {
         playlist.push(baseUrl + '/' + num + '.wav');
     }
 }
-
 /**
  * Play audio sequence
  */

@@ -135,19 +135,33 @@ class AntrianHelper
     
     /**
      * Convert number to Indonesian audio file names
-     * 
-     * @param int $number
-     * @return array
+     * Supports: 0-9999
      */
     public static function convertNumberToAudio($number)
     {
         $files = [];
         
+        if (!is_numeric($number) || $number < 0) {
+            return ['nol'];
+        }
+        
         if ($number == 0) {
             return ['nol'];
         }
         
-        // Handle hundreds
+        // ✅ Handle thousands (1000-9999)
+        if ($number >= 1000) {
+            $thousands = floor($number / 1000);
+            if ($thousands == 1) {
+                $files[] = 'seribu';
+            } else {
+                $files[] = self::getDigitName($thousands);
+                $files[] = 'ribu';
+            }
+            $number = $number % 1000;
+        }
+        
+        // Handle hundreds (100-999)
         if ($number >= 100) {
             $hundreds = floor($number / 100);
             if ($hundreds == 1) {
@@ -159,7 +173,7 @@ class AntrianHelper
             $number = $number % 100;
         }
         
-        // Handle tens
+        // Handle tens (10-99)
         if ($number >= 20) {
             $tens = floor($number / 10);
             $files[] = self::getDigitName($tens);

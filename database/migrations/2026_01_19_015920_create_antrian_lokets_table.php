@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('ml_antrian_loket', function (Blueprint $table) {
             $table->id('kd');
-            $table->string('type', 50)->comment('Loket, CS, Apotek, IGD');
+            $table->string('type', 50)->comment('Loket, CS, Apotek');
             $table->string('noantrian', 50)->comment('Nomor urut antrian');
             $table->string('no_rkm_medis', 50)->nullable()->comment('No Rekam Medis pasien');
             $table->date('postdate')->comment('Tanggal antrian');
