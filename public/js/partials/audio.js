@@ -1,4 +1,4 @@
-// E:\laragon\www\ml-rsb2\public\js\partials\audio.js
+// E:\laragon\www\ml-rsb2\public\js\partials\audio.js 
 
 /**
  * Convert number to Indonesian audio sequence
