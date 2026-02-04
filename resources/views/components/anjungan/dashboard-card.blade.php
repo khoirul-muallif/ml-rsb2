@@ -6,14 +6,15 @@
     'colorFrom' => '#667eea',
     'colorTo' => '#764ba2',
     'badge' => null,
-    'isDisplay' => false
+    'isDisplay' => false,
+    'target' => null,
 ])
 
 @php
     $cardClass = $isDisplay ? 'dashboard-card-display' : 'dashboard-card';
 @endphp
 
-<a href="{{ $href }}" 
+<a href="{{ $href }}"  target="{{ $target }}"
    class="{{ $cardClass }}"
    style="--color-from: {{ $colorFrom }}; --color-to: {{ $colorTo }};">
     

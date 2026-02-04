@@ -6,7 +6,7 @@
     <link rel="stylesheet" href="{{ asset('css/partials/global.css') }}">
     <style>
         body {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #033308 0%, #0a350e 100%);
             min-height: 100vh;
             overflow-x: hidden;
         }

@@ -77,7 +77,7 @@
 }
 
 .header-title p {
-    font-size: 18px;
+    font-size: 28px;
     margin: 5px 0 0 0;
     color: #666;
     font-weight: 600;

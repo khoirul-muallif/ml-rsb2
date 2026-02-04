@@ -6,7 +6,7 @@
     <link rel="stylesheet" href="{{ asset('css/partials/global.css') }}">
     <style>
         body {
-            background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
             min-height: 100vh;
             padding: 40px 0;
         }
@@ -106,7 +106,7 @@
             justify-content: center;
             font-size: 48px;
             color: #fff;
-            background: linear-gradient(135deg, #17a2b8, #138496);
+            background: linear-gradient(135deg, #28a745, #20c997);
         }
 
         .display-card-all .card-content {
@@ -184,7 +184,7 @@
     </div>
     
     <div class="display-grid">
-        <a href="{{ route('anjungan.display') }}" class="display-card-all">
+        <a href="{{ route('anjungan.display') }}" class="display-card-all" target="_blank">
             <div class="card-icon">
                 <i class="fas fa-th-large"></i>
             </div>
@@ -210,7 +210,8 @@
             subtitle="Monitor untuk Loket Pendaftaran Reguler"
             href="{{ route('anjungan.display', ['show' => 'loket']) }}"
             colorFrom="#28a745"
-            colorTo="#20c997" />
+            colorTo="#20c997"
+            target="_blank" />
 
         <!-- Display Loket VIP -->
         <x-anjungan.dashboard-card 
@@ -218,9 +219,10 @@
             title="DISPLAY LOKET VIP"
             subtitle="Monitor untuk Loket Pendaftaran VIP"
             href="{{ route('anjungan.display', ['show' => 'loket_vip']) }}"
-            colorFrom="#ffd700"
-            colorTo="#ff9800"
-            badge="VIP" />
+            colorFrom="#198754"
+            colorTo="#0d6efd"
+            badge="VIP"
+            target="_blank" />
     </div>
 
     <!-- ========================================== -->
@@ -237,8 +239,9 @@
             title="DISPLAY CS"
             subtitle="Monitor untuk Customer Service Reguler"
             href="{{ route('anjungan.display', ['show' => 'cs']) }}"
-            colorFrom="#007bff"
-            colorTo="#0056b3" />
+            colorFrom="#20c997"
+            colorTo="#17a2b8"
+            target="_blank" />
 
         <!-- Display CS VIP -->
         <x-anjungan.dashboard-card 
@@ -246,9 +249,10 @@
             title="DISPLAY CS VIP"
             subtitle="Monitor untuk Customer Service VIP"
             href="{{ route('anjungan.display', ['show' => 'cs_vip']) }}"
-            colorFrom="#6f42c1"
-            colorTo="#5a32a3"
-            badge="VIP" />
+            colorFrom="#0d9488"
+            colorTo="#0891b2"
+            badge="VIP"
+            target="_blank" />
     </div>
 
     <!-- ========================================== -->
@@ -265,8 +269,9 @@
             title="DISPLAY APOTEK"
             subtitle="Monitor untuk Apotek & Farmasi"
             href="{{ route('anjungan.display', ['show' => 'apotek']) }}"
-            colorFrom="#ffc107"
-            colorTo="#ff9800" />
+            colorFrom="#10b981"
+            colorTo="#14b8a6"
+            target="_blank" />
     </div>
 
     <!-- Info Box -->
