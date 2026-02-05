@@ -169,7 +169,12 @@
     <x-anjungan.loading-overlay />
 
     <!-- Print Area -->
-    <x-anjungan.print-area :logo="$logo ?? null" :company="$nama_instansi" :address="$alamat ?? ''" />
+    {{-- <x-anjungan.print-area :logo="$logo ?? null" :company="$nama_instansi" :address="$alamat ?? ''" /> --}}
+    <x-anjungan.print-area 
+        :company="$nama_instansi" 
+        :address="$alamat ?? ''"
+        :phone="$nomor_telepon ?? ''"
+    />
 
 @push('scripts')
     <script src="{{ asset('js/partials/utils.js') }}"></script>
@@ -179,7 +184,8 @@
     function ambilAntrian(type) {
         showLoading();
         
-        fetch('/anjungan/loket/ambil', {
+        // ✅ FIXED: Gunakan endpoint yang benar
+        fetch('/anjungan/api/ambil', {
             method: 'POST',
             headers: {
                 'X-CSRF-TOKEN': CSRF_TOKEN,
@@ -190,17 +196,40 @@
         .then(response => response.json())
         .then(data => {
             if (data.status) {
-                // Set print data
-                document.getElementById('printNumber').textContent = data.display;
-                document.getElementById('printLabel').textContent = data.label;
+                // Get print elements
+                const printNumber = document.getElementById('printNumber');
+                const printTitle = document.getElementById('printTitle');
+                const printDate = document.getElementById('printDate');
+                
+                // Check if elements exist
+                if (!printNumber || !printTitle || !printDate) {
+                    console.error('Print elements not found!');
+                    console.log('printNumber:', printNumber);
+                    console.log('printTitle:', printTitle);
+                    console.log('printDate:', printDate);
+                    alert('Error: Print area tidak ditemukan. Silakan refresh halaman.');
+                    hideLoading();
+                    return;
+                }
+                
+                // Update print elements
+                printNumber.textContent = data.display;
+                printTitle.textContent = data.label || 'Loket Pendaftaran';
+                
+                // Update date
+                const today = new Date();
+                const year = today.getFullYear();
+                const month = String(today.getMonth() + 1).padStart(2, '0');
+                const day = String(today.getDate()).padStart(2, '0');
+                printDate.textContent = `[${year}-${month}-${day}]`;
                 
                 hideLoading();
                 
                 // Print
                 window.print();
                 
-                // Refresh summary
-                loadSummary();
+                // Refresh summary after print
+                setTimeout(loadSummary, 500);
             } else {
                 alert('Gagal: ' + data.message);
                 hideLoading();
@@ -214,7 +243,8 @@
     }
 
     function loadSummary() {
-        fetch('/anjungan/loket/summary')
+        // ✅ FIXED: Gunakan endpoint yang benar
+        fetch('/anjungan/api/summary')
             .then(response => response.json())
             .then(data => {
                 if (data.status) {
@@ -227,20 +257,20 @@
                         
                         if (totalEl) totalEl.textContent = stats.total;
                         if (menungguEl) menungguEl.textContent = stats.menunggu;
-                        // ✅ FIXED: Convert to number first to prevent string concatenation
-                        if (nextEl) nextEl.textContent = (parseInt(stats.last_number) + 1);
+                        if (nextEl) nextEl.textContent = parseInt(stats.last_number) + 1;
                     });
                 }
             })
-            .catch(error => console.error('Error:', error));
+            .catch(error => console.error('Error loading summary:', error));
     }
 
-    // Load on page load
-    loadSummary();
+    // Load summary on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        loadSummary();
+    });
 
     // Auto refresh every 10 seconds
     setInterval(loadSummary, 10000);
     </script>
 @endpush
-
 @endsection

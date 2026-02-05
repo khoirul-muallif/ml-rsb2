@@ -128,71 +128,126 @@
     <x-anjungan.loading-overlay />
 
     <!-- Print Area -->
-    <x-anjungan.print-area :logo="$logo ?? null" :company="$nama_instansi" :address="$alamat ?? ''" />
+    {{-- <x-anjungan.print-area :logo="$logo ?? null" :company="$nama_instansi" :address="$alamat ?? ''" /> --}}
+    <x-anjungan.print-area 
+        :company="$nama_instansi" 
+        :address="$alamat ?? ''"
+        :phone="$nomor_telepon ?? ''"
+    />
 
-@push('scripts')
-    <script src="{{ asset('js/partials/utils.js') }}"></script>
-    <script>
-    const CSRF_TOKEN = '{{ csrf_token() }}';
+    @push('scripts')
+        <script src="{{ asset('js/partials/utils.js') }}"></script>
+        <script>
+        const CSRF_TOKEN = '{{ csrf_token() }}';
 
-    function ambilAntrian(type) {
-        showLoading();
-        
-        fetch('/anjungan/api/ambil', {
-            method: 'POST',
-            headers: {
-                'X-CSRF-TOKEN': CSRF_TOKEN,
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ type })
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.status) {
-                document.getElementById('printNumber').textContent = data.display;
-                document.getElementById('printLabel').textContent = data.label;
-                
-                hideLoading();
-                window.print();
-                loadSummary();
-            } else {
-                alert('Gagal: ' + data.message);
-                hideLoading();
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            alert('Terjadi kesalahan sistem');
-            hideLoading();
-        });
-    }
-
-    function loadSummary() {
-        fetch('/anjungan/api/summary')
+        function ambilAntrian(type) {
+            showLoading();
+            
+            fetch('/anjungan/api/ambil', {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': CSRF_TOKEN,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ type })
+            })
             .then(response => response.json())
             .then(data => {
+                console.log('API Response:', data); // ✅ DEBUG
+                
                 if (data.status) {
-                    // Only update Loket and LoketVIP
-                    ['Loket', 'LoketVIP'].forEach(type => {
-                        const stats = data.summary[type];
-                        if (!stats) return;
-                        
-                        const totalEl = document.getElementById('total-' + type);
-                        const menungguEl = document.getElementById('menunggu-' + type);
-                        const nextEl = document.getElementById('next-' + type);
-                        
-                        if (totalEl) totalEl.textContent = stats.total;
-                        if (menungguEl) menungguEl.textContent = stats.menunggu;
-                        if (nextEl) nextEl.textContent = (parseInt(stats.last_number) + 1);
-                    });
+                    const printNumber = document.getElementById('printNumber');
+                    const printTitle = document.getElementById('printTitle');
+                    const printDate = document.getElementById('printDate');
+                    
+                    if (!printNumber || !printTitle || !printDate) {
+                        console.error('Print elements not found!');
+                        alert('Error: Print area tidak ditemukan. Silakan refresh halaman.');
+                        hideLoading();
+                        return;
+                    }
+                    
+                    // Update print elements
+                    printNumber.textContent = data.display;
+                    printTitle.textContent = data.label || 'Loket Pendaftaran';
+                    
+                    // Update date
+                    const today = new Date();
+                    const year = today.getFullYear();
+                    const month = String(today.getMonth() + 1).padStart(2, '0');
+                    const day = String(today.getDate()).padStart(2, '0');
+                    printDate.textContent = `[${year}-${month}-${day}]`;
+                    
+                    hideLoading();
+                    
+                    // Print
+                    window.print();
+                    
+                    // ✅ FIX: Update UI langsung dari response (jangan tunggu loadSummary)
+                    updateNextNumber(type, data.nomor);
+                    
+                    // ✅ Refresh summary setelah delay (biar database sempat update)
+                    setTimeout(() => loadSummary(), 1000); // Increased to 1 second
+                } else {
+                    alert('Gagal: ' + data.message);
+                    hideLoading();
                 }
             })
-            .catch(error => console.error('Error:', error));
-    }
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Terjadi kesalahan sistem');
+                hideLoading();
+            });
+        }
 
-    loadSummary();
-    setInterval(loadSummary, 10000);
-    </script>
-@endpush
+        // ✅ NEW: Update next number immediately after insert
+        function updateNextNumber(type, currentNumber) {
+            const nextEl = document.getElementById('next-' + type);
+            if (nextEl) {
+                const nextNum = parseInt(currentNumber) + 1;
+                nextEl.textContent = nextNum;
+                console.log(`Updated next-${type}: ${nextNum}`); // ✅ DEBUG
+            }
+        }
+
+        function loadSummary() {
+            fetch('/anjungan/api/summary')
+                .then(response => response.json())
+                .then(data => {
+                    console.log('Summary Response:', data); // ✅ DEBUG
+                    
+                    if (data.status) {
+                        Object.keys(data.summary).forEach(type => {
+                            const stats = data.summary[type];
+                            
+                            const totalEl = document.getElementById('total-' + type);
+                            const menungguEl = document.getElementById('menunggu-' + type);
+                            const nextEl = document.getElementById('next-' + type);
+                            
+                            if (totalEl) totalEl.textContent = stats.total;
+                            if (menungguEl) menungguEl.textContent = stats.menunggu;
+                            
+                            // ✅ FIX: Ensure proper type conversion
+                            if (nextEl) {
+                                const lastNum = parseInt(stats.last_number) || 0;
+                                const nextNum = lastNum + 1;
+                                nextEl.textContent = nextNum;
+                                console.log(`${type}: last=${lastNum}, next=${nextNum}`); // ✅ DEBUG
+                            }
+                        });
+                    }
+                })
+                .catch(error => console.error('Error loading summary:', error));
+        }
+
+        // Load summary on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            loadSummary();
+        });
+
+        // Auto refresh every 10 seconds
+        setInterval(loadSummary, 10000);
+        </script>
+    @endpush
 
 @endsection

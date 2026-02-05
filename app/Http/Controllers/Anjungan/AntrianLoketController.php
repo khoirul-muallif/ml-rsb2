@@ -9,9 +9,37 @@ use App\Helpers\AntrianHelper;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Log;
 
 class AntrianLoketController extends Controller
 {
+    /**
+     * Halaman anjungan pasien
+     */
+    public function index()
+    {
+        $logo = MliteSetting::getSetting('settings', 'logo', 'logo.png');
+        $namaInstansi = MliteSetting::getSetting('settings', 'nama_instansi', 'Rumah Sakit');
+        $alamat = MliteSetting::getSetting('settings', 'alamat', '');
+        $nomorTelepon = MliteSetting::getSetting('settings', 'nomor_telepon', ''); // ✅ TAMBAH
+        $runningText = MliteSetting::getSetting('anjungan', 'text_anjungan', 'Selamat datang');
+        
+        $loketTypes = AntrianHelper::getAllSorted();
+        
+        $today = now()->toDateString();
+        $summary = $this->getSummary($today);
+        
+        return view('anjungan.loket.index', [
+            'logo' => $logo,
+            'nama_instansi' => $namaInstansi,
+            'alamat' => $alamat,
+            'nomor_telepon' => $nomorTelepon, // ✅ TAMBAH
+            'running_text' => $runningText,
+            'loket_types' => $loketTypes,
+            'summary' => $summary
+        ]);
+    }
+
     /**
      * Halaman menu utama - pilih grup layanan
      */
@@ -20,13 +48,42 @@ class AntrianLoketController extends Controller
         $logo = MliteSetting::getSetting('settings', 'logo', 'logo.png');
         $namaInstansi = MliteSetting::getSetting('settings', 'nama_instansi', 'Rumah Sakit');
         $alamat = MliteSetting::getSetting('settings', 'alamat', '');
+        $nomorTelepon = MliteSetting::getSetting('settings', 'nomor_telepon', ''); // ✅ TAMBAH
         $runningText = MliteSetting::getSetting('anjungan', 'text_anjungan', 'Selamat datang');
         
         return view('anjungan.layanan.menu', [
             'logo' => $logo,
             'nama_instansi' => $namaInstansi,
             'alamat' => $alamat,
+            'nomor_telepon' => $nomorTelepon, // ✅ TAMBAH
             'running_text' => $runningText
+        ]);
+    }
+
+    /**
+     * Helper: Show specific group
+     */
+    private function showGroup(array $types, string $view)
+    {
+        $logo = MliteSetting::getSetting('settings', 'logo', 'logo.png');
+        $namaInstansi = MliteSetting::getSetting('settings', 'nama_instansi', 'Rumah Sakit');
+        $alamat = MliteSetting::getSetting('settings', 'alamat', '');
+        $nomorTelepon = MliteSetting::getSetting('settings', 'nomor_telepon', ''); // ✅ TAMBAH
+        $runningText = MliteSetting::getSetting('anjungan', 'text_anjungan', 'Selamat datang');
+        
+        $loketTypes = AntrianHelper::getAllSorted();
+        
+        $today = now()->toDateString();
+        $summary = $this->getSummary($today);
+        
+        return view($view, [
+            'logo' => $logo,
+            'nama_instansi' => $namaInstansi,
+            'alamat' => $alamat,
+            'nomor_telepon' => $nomorTelepon, // ✅ TAMBAH
+            'running_text' => $runningText,
+            'loket_types' => $loketTypes,
+            'summary' => $summary
         ]);
     }
 
@@ -54,109 +111,7 @@ class AntrianLoketController extends Controller
         return $this->showGroup(['Apotek'], 'anjungan.layanan.apotek');
     }
 
-    /**
-     * Helper: Show specific group
-     */
-    private function showGroup(array $types, string $view)
-    {
-        $logo = MliteSetting::getSetting('settings', 'logo', 'logo.png');
-        $namaInstansi = MliteSetting::getSetting('settings', 'nama_instansi', 'Rumah Sakit');
-        $alamat = MliteSetting::getSetting('settings', 'alamat', '');
-        $runningText = MliteSetting::getSetting('anjungan', 'text_anjungan', 'Selamat datang');
-        
-        $loketTypes = AntrianHelper::getAllSorted();
-        
-        $today = now()->toDateString();
-        $summary = $this->getSummary($today);
-        
-        return view($view, [
-            'logo' => $logo,
-            'nama_instansi' => $namaInstansi,
-            'alamat' => $alamat,
-            'running_text' => $runningText,
-            'loket_types' => $loketTypes,
-            'summary' => $summary
-        ]);
-    }
 
-    /**
-     * Halaman anjungan pasien (DEPRECATED - use menu() instead)
-     * Kept for backward compatibility
-     */
-    public function index()
-    {
-        $logo = MliteSetting::getSetting('settings', 'logo', 'logo.png');
-        $namaInstansi = MliteSetting::getSetting('settings', 'nama_instansi', 'Rumah Sakit');
-        $alamat = MliteSetting::getSetting('settings', 'alamat', '');
-        $runningText = MliteSetting::getSetting('anjungan', 'text_anjungan', 'Selamat datang');
-        
-        $loketTypes = AntrianHelper::getAllSorted();
-        
-        $today = now()->toDateString();
-        $summary = $this->getSummary($today);
-        
-        return view('anjungan.loket.index', [
-            'logo' => $logo,
-            'nama_instansi' => $namaInstansi,
-            'alamat' => $alamat,
-            'running_text' => $runningText,
-            'loket_types' => $loketTypes,
-            'summary' => $summary
-        ]);
-    }
-
-    /**
-     * Helper: Get summary untuk tanggal tertentu
-     * ✅ ONLY count TODAY's antrian
-     */
-    private function getSummary($date = null)
-    {
-        if (!$date) {
-            $date = now()->toDateString();
-        }
-
-        $types = ['Loket', 'LoketVIP', 'CS', 'CSVIP', 'Apotek'];
-        $summary = [];
-        
-        foreach ($types as $type) {
-            $config = AntrianHelper::getByType($type);
-            
-            if (!$config) continue;
-            
-            // ✅ PENTING: Filter by postdate = today ONLY
-            $total = DB::table('ml_antrian_loket')
-                ->where('type', $type)
-                ->where('postdate', $date)
-                ->count();
-            
-            $menunggu = DB::table('ml_antrian_loket')
-                ->where('type', $type)
-                ->where('postdate', $date)
-                ->where('status', '0')
-                ->count();
-            
-            $lastNumber = DB::table('ml_antrian_loket')
-                ->where('type', $type)
-                ->where('postdate', $date)
-                ->orderByDesc('noantrian')
-                ->value('noantrian') ?? 0;
-            
-            $summary[$type] = [
-                'label' => $config['label'],
-                'prefix' => $config['prefix'],
-                'total' => $total,
-                'menunggu' => $menunggu,
-                'last_number' => $lastNumber
-            ];
-        }
-        
-        return $summary;
-    }
-
-    /**
-     * API: Ambil nomor antrian baru
-     * ✅ HANYA ambil dari antrian hari ini
-     */
     public function ambil(Request $request)
     {
         try {
@@ -176,32 +131,45 @@ class AntrianLoketController extends Controller
                 ], 400);
             }
 
-            // ✅ PENTING: Hanya ambil last number dari hari INI
+            // ✅ DEBUG LOG
             $lastNumber = DB::table('ml_antrian_loket')
                 ->where('type', $type)
                 ->where('postdate', $today)
-                ->orderByDesc('noantrian')
-                ->value('noantrian');
+                ->max('noantrian');
 
-            // Jika tidak ada antrian hari ini, mulai dari 1
             $nextNumber = $lastNumber ? (int)$lastNumber + 1 : 1;
+            
+            // ✅ LOG BEFORE INSERT
+            //Log::info("BEFORE INSERT - Type: $type, Last: $lastNumber, Next: $nextNumber");
 
-            // Insert antrian baru
-            $id = DB::table('ml_antrian_loket')->insertGetId([
-                'type' => $type,
-                'noantrian' => $nextNumber,
-                'postdate' => $today,
-                'status' => '0',
-                'category' => $config['category'] ?? 'reguler',
-                'loket' => '0',
-                'start_time' => now()->format('H:i:s'),
-                'end_time' => '00:00:00',
-                'no_rkm_medis' => null
-            ]);
+            DB::beginTransaction();
+            
+            try {
+                $id = DB::table('ml_antrian_loket')->insertGetId([
+                    'type' => $type,
+                    'noantrian' => $nextNumber,
+                    'postdate' => $today,
+                    'status' => '0',
+                    'category' => $config['category'] ?? 'reguler',
+                    'loket' => '0',
+                    'start_time' => now()->format('H:i:s'),
+                    'end_time' => '00:00:00',
+                    'no_rkm_medis' => null
+                ]);
+                
+                DB::commit();
+                
+                // ✅ LOG AFTER INSERT
+                //Log::info("AFTER INSERT - ID: $id, Type: $type, Number: $nextNumber");
+            } catch (\Exception $e) {
+                DB::rollBack();
+                //Log::error("INSERT FAILED - Type: $type, Error: " . $e->getMessage());
+                throw $e;
+            }
 
             $displayNumber = $config['prefix'] . $nextNumber;
 
-            return response()->json([
+            $response = [
                 'status' => true,
                 'id' => $id,
                 'type' => $type,
@@ -212,9 +180,15 @@ class AntrianLoketController extends Controller
                 'color' => $config['color'],
                 'category' => $config['category'] ?? 'reguler',
                 'timestamp' => now()->format('Y-m-d H:i:s')
-            ]);
+            ];
+            
+            // ✅ LOG RESPONSE
+            //Log::info("RESPONSE - " . json_encode($response));
+            
+            return response()->json($response);
 
         } catch (\Exception $e) {
+            //Log::error("EXCEPTION - " . $e->getMessage());
             return response()->json([
                 'status' => false,
                 'message' => $e->getMessage()
@@ -222,10 +196,54 @@ class AntrianLoketController extends Controller
         }
     }
 
-    /**
-     * API: Get summary antrian hari ini
-     * ✅ HANYA dari antrian hari ini
-     */
+    private function getSummary($date = null)
+    {
+        if (!$date) {
+            $date = now()->toDateString();
+        }
+
+        $types = ['Loket', 'LoketVIP', 'CS', 'CSVIP', 'Apotek'];
+        $summary = [];
+        
+        foreach ($types as $type) {
+            $config = AntrianHelper::getByType($type);
+            
+            if (!$config) continue;
+            
+            $total = DB::table('ml_antrian_loket')
+                ->where('type', $type)
+                ->where('postdate', $date)
+                ->count();
+            
+            $menunggu = DB::table('ml_antrian_loket')
+                ->where('type', $type)
+                ->where('postdate', $date)
+                ->where('status', '0')
+                ->count();
+            
+            $lastNumber = DB::table('ml_antrian_loket')
+                ->where('type', $type)
+                ->where('postdate', $date)
+                ->max('noantrian');
+            
+            // ✅ CAST TO INT
+            $lastNumber = $lastNumber ? (int)$lastNumber : 0;
+            
+            $summary[$type] = [
+                'label' => $config['label'],
+                'prefix' => $config['prefix'],
+                'total' => $total,
+                'menunggu' => $menunggu,
+                'last_number' => $lastNumber
+            ];
+            
+            // ✅ LOG SUMMARY
+            //Log::info("SUMMARY - Type: $type, Total: $total, Last: $lastNumber");
+        }
+        
+        return $summary;
+    }
+
     public function summary()
     {
         try {
@@ -239,12 +257,14 @@ class AntrianLoketController extends Controller
             ]);
 
         } catch (\Exception $e) {
+            //Log::error("SUMMARY ERROR - " . $e->getMessage());
             return response()->json([
                 'status' => false,
                 'message' => $e->getMessage()
             ], 500);
         }
     }
+
 
     /**
      * API: Get info antrian by ID
@@ -289,7 +309,6 @@ class AntrianLoketController extends Controller
 
     /**
      * API: Cek nomor antrian
-     * ✅ HANYA cek dari antrian hari ini
      */
     public function cek(Request $request)
     {
@@ -301,7 +320,6 @@ class AntrianLoketController extends Controller
             $display = strtoupper($request->display);
             $today = now()->toDateString();
             
-            // Parse prefix dan nomor
             preg_match('/^([A-Z]+)(\d+)$/', $display, $matches);
             
             if (count($matches) !== 3) {
@@ -323,7 +341,6 @@ class AntrianLoketController extends Controller
                 ], 400);
             }
             
-            // ✅ PENTING: Cek hanya dari hari ini
             $antrian = DB::table('ml_antrian_loket')
                 ->where('type', $config['type'])
                 ->where('noantrian', $nomor)
@@ -337,7 +354,6 @@ class AntrianLoketController extends Controller
                 ], 404);
             }
             
-            // Hitung posisi
             $posisi = DB::table('ml_antrian_loket')
                 ->where('type', $config['type'])
                 ->where('postdate', $today)
