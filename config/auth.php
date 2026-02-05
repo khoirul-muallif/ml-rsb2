@@ -38,8 +38,13 @@ return [
     'guards' => [
         'web' => [
             'driver' => 'session',
-            'provider' => 'users',
+            'provider' => 'ml_users',
         ],
+    
+        // 'ml_web' => [  // Guard baru untuk ml_users
+        //     'driver' => 'session',
+        //     'provider' => 'ml_users',
+        // ],
     ],
 
     /*
@@ -60,9 +65,14 @@ return [
     */
 
     'providers' => [
-        'users' => [
+        // 'users' => [
+        //     'driver' => 'eloquent',
+        //     'model' => env('AUTH_MODEL', App\Models\User::class),
+        // ],
+        
+        'ml_users' => [  // Provider baru
             'driver' => 'eloquent',
-            'model' => env('AUTH_MODEL', App\Models\User::class),
+            'model' => App\Models\MlUser::class,
         ],
 
         // 'users' => [
@@ -92,11 +102,17 @@ return [
 
     'passwords' => [
         'users' => [
-            'provider' => 'users',
+            'provider' => 'ml_users',
             'table' => env('AUTH_PASSWORD_RESET_TOKEN_TABLE', 'password_reset_tokens'),
             'expire' => 60,
             'throttle' => 60,
         ],
+        // 'ml_users' => [  // Reset password untuk ml_users
+        //     'provider' => 'ml_users',
+        //     'table' => env('AUTH_PASSWORD_RESET_TOKEN_TABLE', 'password_reset_tokens'),
+        //     'expire' => 60,
+        //     'throttle' => 60,
+        // ],
     ],
 
     /*
