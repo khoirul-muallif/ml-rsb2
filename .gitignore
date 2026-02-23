@@ -25,3 +25,5 @@ Thumbs.db
 .env.*
 !.env.example
 COMMANDS.md
+docker-compose.prod.yml
+docker-compose.override.yml
