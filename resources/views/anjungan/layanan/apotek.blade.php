@@ -9,50 +9,46 @@
         body {
             background: linear-gradient(135deg, #03c019 0%, #012c06 100%);
             min-height: 100vh;
-            overflow-x: hidden;
+            overflow: hidden;
         }
-        .main-container {
-            max-width: 800px;
-            margin: 40px auto;
-            padding: 0 20px;
+
+        .centered-wrapper {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
         }
+
         .page-title {
             text-align: center;
             color: #fff;
-            margin-bottom: 50px;
+            margin-bottom: 30px;
         }
+
         .page-title h2 {
             font-size: 38px;
             font-weight: 700;
-            margin-bottom: 10px;
             text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+            margin: 0;
         }
-        .page-title p { font-size: 18px; opacity: 0.95; }
+
         .loket-grid {
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 30px;
-            max-width: 450px;
-            margin: 0 auto;
+            width: 380px;  {{-- single card, lebar fixed --}}
         }
+
         @media (max-width: 768px) {
+            .loket-grid { width: 100%; max-width: 360px; }
             .page-title h2 { font-size: 28px; }
         }
     </style>
 @endpush
 
 @section('content')
-    <x-anjungan.header 
-        :logo="$logo ?? null"
-        :title="$nama_instansi"
-        :subtitle="$alamat ?? ''"
-        :showTime="false"
-    />
-
-    <div class="main-container">
+    <div class="centered-wrapper">
         <div class="page-title">
             <h2><i class="fas fa-pills"></i> Apotek & Farmasi</h2>
-            <p>Layanan pengambilan obat dan konsultasi farmasi</p>
         </div>
 
         <div class="loket-grid">
@@ -73,10 +69,7 @@
         </div>
     </div>
 
-    <x-anjungan.running-text :text="$running_text" speed="30" />
-    <x-anjungan.footer :company="$nama_instansi" powered="mLITE" />
     <x-anjungan.loading-overlay />
-
     <x-anjungan.print-area 
         :company="$nama_instansi" 
         :address="$alamat ?? ''"

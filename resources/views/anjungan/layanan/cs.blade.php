@@ -9,49 +9,57 @@
         body {
             background: linear-gradient(135deg, #012c06 0%, #072b0b 100%);
             min-height: 100vh;
-            overflow-x: hidden;
+            overflow: hidden;
         }
-        .main-container {
-            max-width: 1000px;
-            margin: 40px auto;
-            padding: 0 20px;
+
+        .centered-wrapper {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
         }
+
         .page-title {
             text-align: center;
             color: #fff;
-            margin-bottom: 50px;
+            margin-bottom: 30px;
         }
+
         .page-title h2 {
             font-size: 38px;
             font-weight: 700;
-            margin-bottom: 10px;
             text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+            margin: 0;
         }
-        .page-title p { font-size: 18px; opacity: 0.95; }
+
         .loket-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            display: flex;
+            flex-direction: row;
             gap: 30px;
+            justify-content: center;
+            align-items: stretch;
+            flex-wrap: wrap;
         }
+
+        .loket-grid > div {
+            width: 320px;
+            flex-shrink: 0;
+        }
+
         @media (max-width: 768px) {
-            .loket-grid { grid-template-columns: 1fr; gap: 25px; }
+            .loket-grid { flex-direction: column; align-items: center; }
+            .loket-grid > div { width: 100%; max-width: 360px; }
             .page-title h2 { font-size: 28px; }
         }
     </style>
 @endpush
 
 @section('content')
-    <x-anjungan.header 
-        :logo="$logo ?? null"
-        :title="$nama_instansi"
-        :subtitle="$alamat ?? ''"
-        :showTime="false"
-    />
-
-    <div class="main-container">
+    <div class="centered-wrapper">
         <div class="page-title">
             <h2><i class="fas fa-headset"></i> Customer Service</h2>
-            <p>Pilih jenis layanan customer service yang Anda butuhkan</p>
         </div>
 
         <div class="loket-grid">
@@ -72,10 +80,7 @@
         </div>
     </div>
 
-    <x-anjungan.running-text :text="$running_text" speed="30" />
-    <x-anjungan.footer :company="$nama_instansi" powered="mLITE" />
     <x-anjungan.loading-overlay />
-
     <x-anjungan.print-area 
         :company="$nama_instansi" 
         :address="$alamat ?? ''"

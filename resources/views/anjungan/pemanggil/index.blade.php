@@ -6,10 +6,21 @@
 @push('styles')
     <link rel="stylesheet" href="{{ asset('css/partials/global.css') }}">
     <style>
-         body {
+         /* body {
             background: linear-gradient(135deg, {{ $config['color']['from'] }} 0%, {{ $config['color']['to'] }} 100%);
             min-height: 100vh;
             padding: 20px 0;
+        } */
+        body {
+            background:
+                linear-gradient(160deg,
+                    rgba(3, 51, 8, 0.85) 0%,
+                    rgba(10, 53, 14, 0.75) 50%,
+                    rgba(3, 51, 8, 0.90) 100%
+                ),
+                url("{{ asset('src/bg1.jpeg') }}") center/cover no-repeat fixed;
+            min-height: 100vh;
+            overflow-x: hidden;
         }
         
         .antrian-header {

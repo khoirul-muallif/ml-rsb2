@@ -7,9 +7,15 @@
     <link rel="stylesheet" href="{{ asset('css/partials/global.css') }}">
     <style>
         body {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            height: 100vh;
-            overflow: hidden;
+            background:
+                linear-gradient(160deg,
+                    rgba(2, 46, 7, 0.877) 0%,
+                    rgba(10, 53, 14, 0.75) 50%,
+                    rgba(3, 51, 8, 0.90) 100%
+                ),
+                url("{{ asset('src/bg1.jpeg') }}") center/cover no-repeat fixed;
+            min-height: 100vh;
+            overflow-x: hidden;
         }
 
         .display-multi-container {

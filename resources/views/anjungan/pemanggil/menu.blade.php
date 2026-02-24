@@ -8,6 +8,17 @@
         body {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
+            
+        }
+        body {
+            background:
+                linear-gradient(160deg,
+                    rgba(3, 51, 8, 0.85) 0%,
+                    rgba(10, 53, 14, 0.75) 50%,
+                    rgba(3, 51, 8, 0.90) 100%
+                ),
+                url("{{ asset('src/bg1.jpeg') }}") center/cover no-repeat fixed;
+            min-height: 100vh;
             padding: 40px 0;
         }
         

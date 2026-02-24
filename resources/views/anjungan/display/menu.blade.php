@@ -5,8 +5,15 @@
 @push('styles')
     <link rel="stylesheet" href="{{ asset('css/partials/global.css') }}">
     <style>
-        body {
-            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+       
+         body {
+            background:
+                linear-gradient(160deg,
+                    rgba(3, 51, 8, 0.85) 0%,
+                    rgba(10, 53, 14, 0.75) 50%,
+                    rgba(3, 51, 8, 0.90) 100%
+                ),
+                url("{{ asset('src/bg1.jpeg') }}") center/cover no-repeat fixed;
             min-height: 100vh;
             padding: 40px 0;
         }

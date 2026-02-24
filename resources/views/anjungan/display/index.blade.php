@@ -11,6 +11,17 @@
             min-height: 100vh;
             overflow: hidden;
             padding-bottom: 100px;
+        }  
+        body::before {
+            content: "";
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: url("{{ asset('src/bg1.jpeg') }}") center/cover no-repeat fixed;
+            opacity: 0.15;
+            z-index: -1;
         }
 
         .display-header {
