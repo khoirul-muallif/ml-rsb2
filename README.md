@@ -1,59 +1,302 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# 🏥 Sistem Antrian Loket RSU Banyumanik 2
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Aplikasi manajemen antrian loket berbasis web untuk RSU Banyumanik 2 (ml-rsb2). Sistem ini menangani antrian pasien di berbagai loket (Loket, CS, Apotek) serta antrian poli klinik, dilengkapi tampilan display antrian dan mode anjungan (kiosk).
 
-## About Laravel
+---
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+## 📋 Daftar Isi
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+- [Tech Stack](#tech-stack)
+- [Fitur Utama](#fitur-utama)
+- [Struktur Proyek](#struktur-proyek)
+- [Persyaratan Sistem](#persyaratan-sistem)
+- [Instalasi — Development Lokal (Laragon)](#instalasi--development-lokal-laragon)
+- [Instalasi — Docker](#instalasi--docker)
+- [Konfigurasi](#konfigurasi)
+- [Daftar Model](#daftar-model)
+- [Testing](#testing)
+- [Menjalankan Display & Anjungan](#menjalankan-display--anjungan)
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+---
 
-## Learning Laravel
+## Tech Stack
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.
+| Komponen | Versi / Keterangan |
+|----------|--------------------|
+| PHP | >= 8.2 |
+| Laravel | 12.47.0 |
+| Database utama | MySQL |
+| Database antrian | MySQL (koneksi terpisah, lihat `config/database.php`) |
+| Frontend | Blade + Vanilla JS + CSS |
+| Deployment | Docker (Nginx + PHP-FPM) |
+| Dev lokal | Laragon |
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+**Package utama:**
+- Native Laravel — tidak ada package admin panel eksternal
+- Konfigurasi antrian kustom via `config/antrian.php`
 
-## Laravel Sponsors
+---
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+## Fitur Utama
 
-### Premium Partners
+### 🎫 Antrian Loket
+- Manajemen antrian multi-loket: **Loket**, **CS**, **Apotek**
+- Pemanggilan & skip antrian
+- Mode **Anjungan** (kiosk self-service) untuk ambil nomor antrian
+- Display antrian realtime per loket
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+### 🏥 Antrian Poli Klinik
+- Antrian per poliklinik & dokter
+- Jadwal dokter & registrasi periksa
+- Data pasien & riwayat kunjungan
 
-## Contributing
+### 📺 Display Antrian
+- Tampilan display besar untuk ruang tunggu (DISPLAY-*.bat)
+- Mode display terpisah per lokasi: Loket, Loket VIP, CS, CS VIP, Apotek
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+### ⚙️ Pengaturan Sistem
+- Konfigurasi via `mlite_settings` (database-driven)
+- Multi-environment: lokal, production
 
-## Code of Conduct
+---
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+## Struktur Proyek
 
-## Security Vulnerabilities
+```
+ml-rsb2/
+├── app/
+│   ├── Helpers/
+│   │   └── AntrianHelper.php       # Helper logika antrian (panggil, skip, generate nomor)
+│   ├── Http/Controllers/           # HTTP controllers
+│   ├── Models/
+│   │   ├── Poli/                   # Models khusus antrian poli klinik
+│   │   ├── AntrianLoket.php        # Model antrian loket utama
+│   │   ├── MliteSetting.php        # Pengaturan aplikasi berbasis DB
+│   │   ├── MlPasswordResetToken.php
+│   │   ├── MlSession.php
+│   │   └── MlUser.php              # User login sistem
+│   └── Providers/
+│       └── AppServiceProvider.php
+├── config/
+│   ├── antrian.php                 # Konfigurasi antrian (loket, prefix, dll)
+│   ├── database.php                # Multi-koneksi DB (MySQL utama + DB antrian)
+│   └── ...
+├── database/
+│   ├── migrations/
+│   │   ├── poli/                   # Migrasi khusus poli klinik
+│   │   └── ...
+│   └── seeders/
+│       ├── AntrianLoketTestSeeder.php
+│       ├── MlSettingsSeeder.php
+│       ├── PoliDatabaseSeeder.php
+│       └── Poli*Seeder.php         # Seeder data poli (dokter, jadwal, pasien, dll)
+├── docker/
+│   ├── nginx/
+│   │   ├── default.conf            # Nginx config lokal
+│   │   └── default.prod.conf       # Nginx config production
+│   └── php/
+│       └── Dockerfile
+├── public/
+│   ├── css/ & js/                  # Asset frontend (partials)
+│   ├── plugins/anjungan/           # Plugin JS untuk mode kiosk
+│   └── src/                        # Gambar & aset (logo, banner, background)
+├── resources/views/
+│   ├── anjungan/                   # Blade views mode kiosk/anjungan
+│   ├── components/                 # Blade components reusable
+│   └── layouts/                    # Layout utama
+├── routes/
+│   ├── web.php                     # Route utama (loket, display, admin)
+│   └── anjungan_poli.php           # Route khusus anjungan poli
+├── zzzzzz_bat/                     # Script .bat untuk menjalankan APM & Display
+│   ├── APM-Loket.bat / APM-Loket (prod).bat
+│   ├── APM-CS.bat / APM-CS (prod).bat
+│   ├── APM-Apotek.bat / APM-Apotek (prod).bat
+│   ├── DISPLAY-Loket(prod).bat
+│   ├── DISPLAY-CS(prod).bat
+│   └── ...
+└── COMMANDS.md                     # Referensi perintah penting proyek ini
+```
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+---
 
-## License
+## Persyaratan Sistem
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+**Development lokal:**
+- PHP >= 8.2 (dengan ekstensi: `mbstring`, `pdo_mysql`, `openssl`, `tokenizer`, `xml`)
+- MySQL >= 8.0
+- Laragon (disarankan) atau XAMPP
+- Composer >= 2.x
+- Node.js >= 18.x & npm
+
+**Production:**
+- Docker & Docker Compose
+- MySQL >= 8.0 (bisa eksternal/cloud)
+
+---
+
+## Instalasi — Development Lokal (Laragon)
+
+```bash
+# 1. Clone repository
+git clone <repo-url> ml-rsb2
+cd ml-rsb2
+
+# 2. Install dependensi PHP
+composer install
+
+# 3. Install dependensi Node.js
+npm install
+
+# 4. Salin file environment
+cp .env.example .env
+
+# 5. Generate application key
+php artisan key:generate
+
+# 6. Sesuaikan konfigurasi database di .env
+#    (lihat bagian Konfigurasi di bawah)
+
+# 7. Buat database di MySQL, lalu jalankan migrasi
+php artisan migrate
+
+# 8. Jalankan seeder pengaturan dasar
+php artisan db:seed --class=MlSettingsSeeder
+
+# 9. (Opsional) Seeder data dummy poli
+php artisan db:seed --class=PoliDatabaseSeeder
+
+# 10. Jalankan server lokal
+php artisan serve
+```
+
+> 💡 **Tips Laragon:** Pastikan virtual host sudah terbuat otomatis oleh Laragon. Akses via `http://ml-rsb2.test`
+
+---
+
+## Instalasi — Docker
+
+```bash
+# Development
+docker-compose up -d
+
+# Production
+docker-compose -f docker-compose.prod.yml up -d
+```
+
+Konfigurasi Nginx tersedia di:
+- `docker/nginx/default.conf` — lokal
+- `docker/nginx/default.prod.conf` — production
+
+---
+
+## Konfigurasi
+
+Sesuaikan file `.env`:
+
+```env
+APP_NAME="Antrian RSB2"
+APP_ENV=local
+APP_URL=http://ml-rsb2.test
+
+# Database utama (users, settings)
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=ml_rsb2
+DB_USERNAME=root
+DB_PASSWORD=
+
+# Timezone penting untuk antrian
+APP_TIMEZONE=Asia/Jakarta
+```
+
+> ⚠️ Cek `config/database.php` — aplikasi ini mungkin menggunakan **lebih dari satu koneksi database**. Pastikan semua koneksi dikonfigurasi di `.env`.
+
+Untuk production, gunakan `.env.production` sebagai referensi:
+```bash
+cp .env.production .env
+# sesuaikan credential production
+```
+
+---
+
+## Daftar Model
+
+### Models Utama
+
+| Model | Tabel | Koneksi | Keterangan |
+|-------|-------|---------|------------|
+| `AntrianLoket` | `antrian_lokets` | default | Antrian loket utama (nomor, status, loket, timestamp) |
+| `MliteSetting` | `mlite_settings` | default | Pengaturan aplikasi berbasis database |
+| `MlUser` | `users` | default | Pengguna sistem (petugas loket, admin) |
+| `MlSession` | `sessions` | default | Sesi login user |
+| `MlPasswordResetToken` | `password_reset_tokens` | default | Token reset password |
+
+### Models Poli (`app/Models/Poli/`)
+
+| Model | Keterangan |
+|-------|------------|
+| Poliklinik | Data master poliklinik |
+| Dokter | Data dokter per poli |
+| Jadwal | Jadwal praktik dokter |
+| Pasien | Data pasien |
+| RegPeriksa | Registrasi kunjungan periksa |
+| AntriPoli | Antrian per poli/dokter |
+
+### Helper Utama
+
+| File | Fungsi |
+|------|--------|
+| `app/Helpers/AntrianHelper.php` | Logika inti antrian: generate nomor, panggil, skip, reset harian |
+
+---
+
+## Testing
+
+```bash
+# Jalankan semua test
+php artisan test
+
+# Jalankan dengan output detail
+php artisan test --verbose
+```
+
+> ℹ️ Test suite masih minimal (scaffold awal). Untuk data dummy, gunakan seeder:
+
+```bash
+# Seeder antrian loket (data test)
+php artisan db:seed --class=AntrianLoketTestSeeder
+
+# Seeder lengkap poli
+php artisan db:seed --class=PoliDatabaseSeeder
+```
+
+---
+
+## Menjalankan Display & Anjungan
+
+Folder `zzzzzz_bat/` berisi script `.bat` untuk membuka browser di mode kiosk/display. Jalankan di komputer display atau anjungan:
+
+| Script | Fungsi |
+|--------|--------|
+| `APM-Loket.bat` | Buka APM mode Loket (lokal) |
+| `APM-Loket (prod).bat` | Buka APM mode Loket (production) |
+| `APM-CS.bat` | Buka APM mode CS (lokal) |
+| `APM-Apotek.bat` | Buka APM mode Apotek (lokal) |
+| `DISPLAY-Loket(prod).bat` | Display antrian Loket — layar besar |
+| `DISPLAY-LoketVIP(prod).bat` | Display antrian Loket VIP |
+| `DISPLAY-CS(prod).bat` | Display antrian CS |
+| `DISPLAY-CSVIP(prod).bat` | Display antrian CS VIP |
+| `DISPLAY-Apotek(prod).bat` | Display antrian Apotek |
+
+> 📖 Lihat `COMMANDS.md` di root proyek untuk referensi perintah-perintah penting lainnya.
+
+---
+
+## Kontributor
+
+Dikembangkan untuk kebutuhan internal **RSU Banyumanik 2**, Semarang.
+
+---
+
+*Dokumentasi ini di-generate pada: Mei 2026*
